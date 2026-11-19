@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+
+# Modelo de transcricao (~2 GB - baixa sozinho na primeira vez)
+modelos/
+
+# Videos e arquivos gerados - nunca sobem pro repositorio
+baixados/
+saida/
+trabalho/
+
+# Instalador: downloads, pasta montada e o .exe gerado (node instalador/montar.js)
+instalador/cache/
+instalador/montagem/
+instalador/dist/
+
+# Segredos
+.env
+*.key
+
+# Backups locais
+*.antigo
+*.bak
+
+# Lixo do sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Fontes ficam so no PC (a Burbank e paga; o programa nao usa nenhuma delas)
+fontes/

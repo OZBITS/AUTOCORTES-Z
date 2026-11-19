@@ -1,0 +1,201 @@
+# -*- coding: utf-8 -*-
+"""
+Transcreve um audio com faster-whisper e grava um JSON com timestamps por palavra.
+Reporta progresso em stdout, uma linha JSON por vez, para o Node acompanhar.
+"""
+import argparse
+import io
+import json
+import os
+import sys
+
+# Windows costuma abrir o stdout em cp1252 e quebrar com acento.
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
+
+def avisar(tipo, **campos):
+    campos["tipo"] = tipo
+    print(json.dumps(campos, ensure_ascii=False), flush=True)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--audio", required=True)
+    p.add_argument("--saida", required=True)
+    p.add_argument("--modelo", default="small")
+    p.add_argument("--idioma", default="pt")
+    p.add_argument("--duracao", type=float, default=0.0)
+    args = p.parse_args()
+
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        avisar("erro", msg="faster-whisper nao instalado. Rode instalar.bat de novo.")
+        sys.exit(2)
+
+    avisar("progresso", pct=2, msg="Carregando o modelo de transcricao (%s)..." % args.modelo)
+
+    # Em container, os.cpu_count() ve os nucleos do HOST, nao a cota da
+    # maquina (cgroup) - pedir threads demais deixa mais lento, nao mais
+    # rapido. NUM_THREADS deixa o dono do servidor fixar o numero certo.
+    threads_do_ambiente = os.environ.get("NUM_THREADS")
+    if threads_do_ambiente:
+        threads = max(1, int(threads_do_ambiente))
+    else:
+        threads = max(1, (os.cpu_count() or 4) - 2)
+
+    # MODELOS_DIR aponta pro modelo ja assado na imagem do container (o
+    # instalar.bat baixa uma vez). Sem isso, cada job baixaria ~500 MB de
+    # novo do HuggingFace numa pasta que some a cada deploy.
+    pasta_modelos = os.environ.get("MODELOS_DIR") or os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "modelos"
+    )
+
+    # int8 no CPU: bem mais rapido e cabe folgado na RAM.
+    modelo = WhisperModel(
+        args.modelo,
+        device="cpu",
+        compute_type="int8",
+        cpu_threads=threads,
+        download_root=pasta_modelos,
+    )
+
+    avisar("progresso", pct=6, msg="Ouvindo o video inteiro...")
+
+    opcoes = dict(
+        language=(None if args.idioma == "auto" else args.idioma),
+        task="transcribe",
+        beam_size=1,                           # greedy: ~2x mais rapido no CPU e quase a mesma qualidade
+        best_of=1,
+        temperature=0.0,
+        vad_filter=True,                       # corta silencio, acelera e evita alucinacao
+        vad_parameters={"min_silence_duration_ms": 400},
+        word_timestamps=True,                  # precisamos disso pro corte e pra legenda
+        condition_on_previous_text=False,      # evita o modelo repetir frase em loop
+    )
+
+    # Audio longo (live de 3, 10 horas) vai em pedacos: o faster-whisper
+    # carrega o arquivo inteiro na memoria, e 6h de audio viram 1,5 GB antes
+    # de comecar - numa maquina com pouca RAM livre o processo morre.
+    pedacos = pedacos_do_wav(args.audio, args.duracao) if args.duracao > LIMITE_INTEIRO else None
+    if pedacos is None:
+        segmentos_iter, info = modelo.transcribe(args.audio, **opcoes)
+        duracao = args.duracao or float(getattr(info, "duration", 0) or 0)
+        idioma = getattr(info, "language", args.idioma)
+        fontes = [(0.0, segmentos_iter, float("inf"))]
+    else:
+        duracao = args.duracao
+        idioma = args.idioma
+        fontes = ((inicio, modelo.transcribe(audio, **opcoes)[0], limite)
+                  for inicio, audio, limite in pedacos)
+
+    segmentos = []
+    ultimo_aviso = 0.0
+    for deslocamento, segmentos_iter, limite in fontes:
+        # o pedaco comeca uns segundos antes do fim do anterior: o que ja foi
+        # ouvido la fica de fora, pra frase da emenda nao sair repetida
+        ja_ouvido = segmentos[-1]["fim"] - 0.1 if segmentos else -1.0
+        for s in segmentos_iter:
+            if deslocamento + float(s.start) < ja_ouvido:
+                continue
+            # frase que termina colada no fim do pedaco pode ter sido cortada
+            # no meio: o proximo pedaco, que comeca antes, ouve ela inteira
+            if deslocamento + float(s.end) > limite:
+                break
+            palavras = []
+            for w in (s.words or []):
+                texto = (w.word or "").strip()
+                if not texto:
+                    continue
+                palavras.append({
+                    "inicio": round(deslocamento + float(w.start), 3),
+                    "fim": round(deslocamento + float(w.end), 3),
+                    "texto": texto,
+                    "conf": round(float(getattr(w, "probability", 0.0) or 0.0), 3),
+                })
+
+            fim = deslocamento + float(s.end)
+            segmentos.append({
+                "inicio": round(deslocamento + float(s.start), 3),
+                "fim": round(fim, 3),
+                "texto": (s.text or "").strip(),
+                "palavras": palavras,
+            })
+
+            # 6% -> 92% conforme caminha na linha do tempo do video
+            if duracao > 0 and (fim - ultimo_aviso) > 3:
+                ultimo_aviso = fim
+                pct = 6 + min(86.0, (fim / duracao) * 86.0)
+                avisar("progresso", pct=round(pct, 1),
+                       msg="Transcrevendo... %s de %s" % (mmss(fim), mmss(duracao)))
+
+    total_palavras = sum(len(s["palavras"]) for s in segmentos)
+    if total_palavras == 0:
+        avisar("erro", msg="Nao encontrei fala nenhuma no audio desse video.")
+        sys.exit(3)
+
+    with open(args.saida, "w", encoding="utf-8") as f:
+        json.dump({
+            "idioma": idioma,
+            "duracao": duracao,
+            "segmentos": segmentos,
+        }, f, ensure_ascii=False)
+
+    avisar("progresso", pct=94, msg="Transcricao pronta: %d palavras." % total_palavras)
+    avisar("ok", palavras=total_palavras, segmentos=len(segmentos))
+
+
+def mmss(s):
+    s = int(s or 0)
+    return "%d:%02d" % (s // 60, s % 60)
+
+
+# Acima disso o audio vai em pedacos. Video comum continua do jeito de sempre.
+LIMITE_INTEIRO = 40 * 60
+PEDACO = 10 * 60
+EMENDA = 8  # segundos que cada pedaco repete do anterior, pra nao cortar palavra
+
+
+def pedacos_do_wav(caminho, duracao):
+    """
+    Le o WAV (16 kHz mono, o que o programa grava) aos pedacos de 10 min,
+    cada um comecando 8s antes do fim do anterior. Se o arquivo nao for
+    desse formato, devolve None e a transcricao segue do jeito inteiro.
+    """
+    import wave
+    try:
+        w = wave.open(caminho, "rb")
+    except Exception:
+        return None
+    if w.getnchannels() != 1 or w.getsampwidth() != 2 or w.getframerate() != 16000:
+        w.close()
+        return None
+
+    def gerar():
+        import numpy as np
+        taxa = 16000
+        total = w.getnframes()
+        inicio = 0
+        try:
+            while inicio < total:
+                w.setpos(inicio)
+                bruto = w.readframes(min(PEDACO * taxa, total - inicio))
+                if not bruto:
+                    break
+                audio = np.frombuffer(bruto, dtype=np.int16).astype(np.float32) / 32768.0
+                ultimo = inicio + PEDACO * taxa >= total
+                comeco = inicio / float(taxa)
+                limite = float("inf") if ultimo else comeco + PEDACO - EMENDA / 2.0
+                yield comeco, audio, limite
+                if ultimo:
+                    break
+                inicio += (PEDACO - EMENDA) * taxa
+        finally:
+            w.close()
+
+    return gerar()
+
+
+if __name__ == "__main__":
+    main()

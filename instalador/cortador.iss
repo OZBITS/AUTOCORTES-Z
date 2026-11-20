@@ -3,7 +3,7 @@
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
 #define Nome "Cortador Automático"
-#define Versao "1.0.0"
+#define Versao "2.0.0"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM
   #define MONTAGEM "montagem"
@@ -52,7 +52,7 @@ LZMANumBlockThreads=2
 Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
-WelcomeLabel2=Isso vai instalar o [name] no seu computador.%n%nEle transforma vídeos longos (lives, YouTube) em cortes verticais prontos pro TikTok, Reels e Shorts.%n%nOs cortes ficam na pasta Vídeos > Cortador Automatico.
+WelcomeLabel2=Isso vai instalar o [name] no seu computador.%n%nEle transforma vídeos e lives da Twitch, Kick e YouTube em cortes verticais prontos pro TikTok, Reels e Shorts - de vídeo gravado ou ao vivo, enquanto a live acontece.%n%nTudo roda no seu PC, de graça. Os cortes ficam na pasta Vídeos > Cortador Automatico.
 FinishedLabel=Pronto! O [name] está instalado.%n%nÉ só abrir pelo atalho na área de trabalho ou no menu Iniciar.
 
 [Tasks]

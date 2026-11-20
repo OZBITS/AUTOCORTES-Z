@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Desenha o icone do Cortador Automatico (degrade rosa -> laranja da tela, com
+Desenha o icone do Cortador Automatico (degrade azul da tela, com
 a tesoura branca) e as imagens do instalador. Roda uma vez; os arquivos
 gerados ficam em instalador/imagens e o montar.js so usa.
 
@@ -12,21 +12,21 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAIDA = os.path.join(AQUI, "imagens")
-ROSA = (255, 77, 109)      # --marca da tela
-LARANJA = (255, 138, 92)   # --marca2
+AZUL_FUNDO = (35, 98, 214)       # azul mais fundo (em cima, a esquerda)
+AZUL_CLARO = (110, 172, 255)  # azul claro, --marca2 da tela
 TESOURA = "\u2702"
 FONTE = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "seguisym.ttf")
 
 
 def degrade(largura, altura):
-    """Degrade na diagonal, do rosa (em cima, a esquerda) pro laranja."""
+    """Degrade na diagonal, do azul fundo (em cima, a esquerda) pro azul claro."""
     img = Image.new("RGB", (largura, altura))
     px = img.load()
     total = largura + altura - 2 or 1
     for y in range(altura):
         for x in range(largura):
             t = (x + y) / total
-            px[x, y] = tuple(round(a + (b - a) * t) for a, b in zip(ROSA, LARANJA))
+            px[x, y] = tuple(round(a + (b - a) * t) for a, b in zip(AZUL_FUNDO, AZUL_CLARO))
     return img
 
 
@@ -40,7 +40,7 @@ def tesoura(lado, cor=(255, 255, 255, 255)):
     y = (lado - (caixa[3] - caixa[1])) / 2 - caixa[1]
 
     sombra = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
-    ImageDraw.Draw(sombra).text((x, y + lado * 0.025), TESOURA, font=fonte, fill=(90, 20, 40, 110))
+    ImageDraw.Draw(sombra).text((x, y + lado * 0.025), TESOURA, font=fonte, fill=(8, 24, 64, 120))
     sombra = sombra.filter(ImageFilter.GaussianBlur(lado * 0.02))
     ImageDraw.Draw(camada).text((x, y), TESOURA, font=fonte, fill=cor)
     return Image.alpha_composite(sombra, camada).rotate(-20, resample=Image.BICUBIC)
@@ -67,7 +67,7 @@ def lateral(largura, altura):
     caixa = ((largura - lado) // 2, round(altura * 0.34))
     ImageDraw.Draw(sombra).rounded_rectangle(
         (caixa[0], caixa[1] + lado * 0.05, caixa[0] + lado, caixa[1] + lado * 1.05),
-        radius=round(lado * 0.23), fill=(80, 10, 30, 90))
+        radius=round(lado * 0.23), fill=(6, 18, 52, 100))
     img = Image.alpha_composite(img, sombra.filter(ImageFilter.GaussianBlur(lado * 0.06)))
     # contorno branco pro icone nao sumir no fundo da mesma cor
     borda = Image.new("RGBA", (lado + 8, lado + 8), (0, 0, 0, 0))

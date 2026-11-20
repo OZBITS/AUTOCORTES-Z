@@ -29,7 +29,7 @@ function acharBinario(nome) {
       }
     }
   } catch (_) { /* pasta do winget pode nao existir */ }
-  candidatos.push(path.join('C:', 'ffmpeg', 'bin', nome + '.exe'));
+  candidatos.push(path.join('C:\\', 'ffmpeg', 'bin', nome + '.exe'));
   return candidatos;
 }
 

@@ -44,7 +44,9 @@ const PACOTES_PY = [
 // python.exe, pra funcionar tambem em PC que nunca instalou o "Visual C++ Redistributable".
 const DLLS_VC = ['msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'concrt140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'];
 
-const MODELO = 'models--Systran--faster-whisper-small';
+// small: a transcricao dos videos. base: o modo "Rapido" e o titulo dos
+// clipes ao vivo. Os dois vao dentro, pra funcionar sem internet.
+const MODELOS = ['models--Systran--faster-whisper-small', 'models--Systran--faster-whisper-base'];
 
 // Os do proprio Windows: no Git Bash o tar e o curl do PATH sao outros e nao entendem 'C:'.
 const SISTEMA32 = path.join(process.env.WINDIR || 'C:\\Windows', 'System32');
@@ -112,9 +114,11 @@ function copiar(de, para, filtro) {
 const semLixo = (src) => !/[\\/](__pycache__|\.git)([\\/]|$)/.test(src) && !/\.pyc$/.test(src);
 
 function montarApp() {
-  passo('Programa (src, py, fontes, bibliotecas do Node)');
+  passo('Programa (src e py)');
   const app = path.join(MONTAGEM, 'app');
-  for (const pasta of ['src', 'py', 'fontes', 'node_modules']) copiar(path.join(RAIZ, pasta), path.join(app, pasta), semLixo);
+  // So o codigo: o programa nao usa bibliotecas do npm, e a pasta fontes/ do
+  // PC tem fonte paga (Burbank) que nao pode ir num instalador publico.
+  for (const pasta of ['src', 'py']) copiar(path.join(RAIZ, pasta), path.join(app, pasta), semLixo);
   fs.copyFileSync(path.join(RAIZ, 'package.json'), path.join(app, 'package.json'));
 }
 
@@ -181,11 +185,13 @@ function montarFfmpeg() {
 }
 
 function montarModelo() {
-  passo('Modelo de transcricao "small"');
-  const de = path.join(RAIZ, 'modelos', MODELO);
-  if (!fs.existsSync(de)) throw new Error('Nao achei ' + de + ' (rode o programa uma vez pra baixar o modelo)');
-  // So o que o faster-whisper le: refs/main aponta pra pasta em snapshots.
-  copiar(de, path.join(MONTAGEM, 'modelos', MODELO), (src) => !/[\\/](\.no_exist|blobs)([\\/]|$)/.test(src));
+  passo('Modelos de transcricao (small e base)');
+  for (const modelo of MODELOS) {
+    const de = path.join(RAIZ, 'modelos', modelo);
+    if (!fs.existsSync(de)) throw new Error('Nao achei ' + de + ' (rode o programa uma vez pra baixar o modelo)');
+    // So o que o faster-whisper le: refs/main aponta pra pasta em snapshots.
+    copiar(de, path.join(MONTAGEM, 'modelos', modelo), (src) => !/[\\/](\.no_exist|blobs)([\\/]|$)/.test(src));
+  }
 }
 
 function montarLancador() {

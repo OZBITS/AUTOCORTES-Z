@@ -792,35 +792,52 @@ class SessaoAoVivo {
       ass = 'aovivo-texto-' + this.id + '.ass';
       legenda.gerarAss([], 0, path.join(TRABALHO, ass), { incluirPalavras: false, textoFixo: this.textoFixo });
     }
-    let args;
-    if (filtro) {
-      // -ss antes da entrada: o clipe comeca no tempo 0, e o texto "so no
-      // comeco" conta a partir dali. Com recodificacao o corte e exato.
-      const fs2 = ass ? filtro.replace(/\[v\]$/, ',subtitles=' + ass + (fontsdirRelativo() ? ':fontsdir=' + fontsdirRelativo() : '') + '[v]') : filtro;
-      args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3),
-        '-f', 'concat', '-safe', '0', '-i', lista, '-t', dur.toFixed(3),
-        '-filter_complex', fs2, '-map', '[v]', '-map', '0:a?',
-        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
-        '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
-    } else {
-      args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
-        '-ss', deslocamento.toFixed(3), '-t', dur.toFixed(3),
-        '-map', '0:v', '-map', '0:a?', '-c', 'copy', '-avoid_negative_ts', 'make_zero'];
-    }
-    args.push('-movflags', '+faststart', mp4);
-    await media.rodar(ffmpeg, args, { cwd: TRABALHO });
-
-    // a versao deitada, sem mexer em nada - pra quem quer editar por fora
-    let original = null;
-    if (this.salvarOriginal && filtro) {
-      original = path.join(this.pasta, nomeBase + '-original.mp4');
-      try {
-        await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
-          '-ss', deslocamento.toFixed(3), '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy',
-          '-avoid_negative_ts', 'make_zero', '-movflags', '+faststart', original]);
-      } catch (_) { original = null; }
-    }
+    // Voz atrasada: pular direto pro meio da lista de pedacos (concat + -ss)
+    // fazia a imagem so comecar no proximo quadro-chave, 1-2s depois do som -
+    // e TikTok/CapCut, que ignoram esse vao, tocavam a voz atrasada. Agora os
+    // pedacos viram primeiro UM arquivo continuo (comeca num quadro-chave,
+    // imagem e som juntos) e o corte exato e feito nele. Em .mkv, e nao .ts:
+    // o .ts nao tem indice e o pulo caia depois do quadro-chave (mesmo vao).
+    const junto = path.join(this.dir, nomeBase + '-junto.mkv');
+    await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
+      '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-f', 'matroska', junto]);
     try { fs.unlinkSync(lista); } catch (_) {}
+
+    let args;
+    let original = null;
+    try {
+      if (filtro) {
+        // -ss antes da entrada num arquivo comum: corte exato (decodifica desde
+        // o quadro-chave e descarta o que vem antes), e o clipe comeca no 0 -
+        // o texto "so no comeco" conta a partir dali.
+        const fs2 = ass ? filtro.replace(/\[v\]$/, ',subtitles=' + ass + (fontsdirRelativo() ? ':fontsdir=' + fontsdirRelativo() : '') + '[v]') : filtro;
+        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3),
+          '-i', junto, '-t', dur.toFixed(3),
+          '-filter_complex', fs2, '-map', '[v]', '-map', '0:a?',
+          '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
+          '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
+      } else {
+        // sem mexer na imagem: recodifica so o comeco seria trabalho demais,
+        // entao vai inteiro a partir do quadro-chave mais perto
+        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
+          '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy', '-avoid_negative_ts', 'make_zero'];
+      }
+      args.push('-movflags', '+faststart', mp4);
+      await media.rodar(ffmpeg, args, { cwd: TRABALHO });
+
+      // a versao deitada, sem mexer em nada - pra quem quer editar por fora:
+      // copia do quadro-chave mais perto, com imagem e som saindo juntos
+      if (this.salvarOriginal && filtro) {
+        original = path.join(this.pasta, nomeBase + '-original.mp4');
+        try {
+          await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
+            '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy',
+            '-avoid_negative_ts', 'make_zero', '-movflags', '+faststart', original]);
+        } catch (_) { original = null; }
+      }
+    } finally {
+      try { fs.unlinkSync(junto); } catch (_) {}
+    }
 
     const jpg = path.join(this.pasta, nomeBase + '.jpg');
     try { await media.gerarMiniatura(mp4, Math.min(dur / 2, 8), jpg, this.formato !== 'original'); } catch (_) {}
@@ -967,7 +984,7 @@ function limparSobras() {
     const dir = path.join(RAIZ_BUFFER, d.name);
     try {
       for (const n of fs.readdirSync(dir)) {
-        if (/\.(ts|csv|txt)$/i.test(n)) fs.unlinkSync(path.join(dir, n));
+        if (/\.(ts|mkv|csv|txt)$/i.test(n)) fs.unlinkSync(path.join(dir, n));
       }
       fs.rmdirSync(dir);
     } catch (_) {}

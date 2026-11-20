@@ -104,6 +104,21 @@ function rotuloDoNivel(n) {
  * transmissao (.m3u8). Ate 1080p: acima disso o render fica lento e o
  * TikTok recomprime tudo pra 1080 de qualquer jeito.
  */
+// Formato com imagem e som juntos, pro caminho em que o yt-dlp entrega a live
+const FORMATO_UNICO = 'b[height<=1080][fps<=60]/b[height<=1080]/b';
+
+/** O erro do ffmpeg/yt-dlp em frase de gente, pra aparecer na tela. */
+function motivoDaFalha(bruto) {
+  const t = String(bruto || '');
+  if (/403|forbidden/i.test(t)) return 'o site recusou a conexão (403)';
+  if (/404|not found/i.test(t)) return 'o endereço da live expirou (404)';
+  if (/timed? ?out|timeout/i.test(t)) return 'a conexão demorou demais';
+  if (/getaddrinfo|resolve|network|connection (refused|reset)/i.test(t)) return 'sem conexão com a internet ou com o site';
+  if (/not currently live|offline/i.test(t)) return 'o canal saiu do ar';
+  const linha = t.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).pop();
+  return linha ? linha.replace(/^\[[^\]]+\]\s*/, '').slice(0, 120) : 'motivo desconhecido';
+}
+
 async function resolverAoVivo(url) {
   const bin = await baixador.garantirYtDlp();
   return new Promise((resolve, reject) => {
@@ -380,6 +395,9 @@ class SessaoAoVivo {
       textoFixo: this.textoFixo,
       // o pedaco mais novo: e dele que sai a imagem pra marcar webcam e foco
       ultimoPedaco: this.ultimoPedaco(),
+      // por que ainda nao tem imagem (a tela de preparo mostra)
+      problema: this.ultimoProblema || null,
+      viaYtDlp: !!this.viaYtDlp,
     };
   }
 
@@ -392,11 +410,27 @@ class SessaoAoVivo {
     this.lidosPorRodada = 0;
     const csv = path.join(this.dir, 'lista-' + this.rodada + '.csv');
     this.csvAtual = csv;
+    const pedacosAntes = this.pedacos.length;
+    this.ultimoPedacoEm = Date.now();
+
+    // Segundo caminho: o proprio yt-dlp baixa a live e entrega pro ffmpeg.
+    // Ele manda os cabecalhos que o site espera - passa onde o ffmpeg direto
+    // toma recusa (aconteceu com a Kick no PC de quem usa).
+    let yt = null;
+    let entrada = ['-i', m3u8];
+    if (this.viaYtDlp) {
+      const bin = await baixador.garantirYtDlp();
+      yt = spawn(bin, ['--no-warnings', '--no-part', '--hls-use-mpegts', '-f', FORMATO_UNICO, '-o', '-', this.url], { windowsHide: true });
+      yt.stderr.on('data', (d) => { this.erroYt = (String(this.erroYt || '') + d.toString()).slice(-600); });
+      yt.on('error', () => {});
+      this.procYt = yt;
+      entrada = ['-i', 'pipe:0'];
+      audio = null;
+    }
     const args = [
       '-hide_banner', '-loglevel', 'error',
-      '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
-      '-i', m3u8,
-    ].concat(audio ? [
+    ].concat(this.viaYtDlp ? [] : ['-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5'])
+    .concat(entrada).concat(audio ? [
       '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
       '-i', audio, '-map', '0:v:0', '-map', '1:a:0',
     ] : ['-map', '0:v:0', '-map', '0:a:0?']).concat([
@@ -407,13 +441,30 @@ class SessaoAoVivo {
       path.join(this.dir, 'p%07d.ts'),
     ]);
     this.proc = spawn(ffmpeg, args, { windowsHide: true });
+    if (yt) { yt.stdout.pipe(this.proc.stdin); this.proc.stdin.on('error', () => {}); }
     let erro = '';
     this.proc.stderr.on('data', (d) => { erro = (erro + d.toString()).slice(-800); });
     this.proc.on('close', () => {
       this.proc = null;
+      if (yt) { try { yt.kill(); } catch (_) {} this.procYt = null; }
       this.lerLista(); // o ultimo pedaco
       if (this.parado) return;
-      this.status('reconectando', 'A transmissão caiu. Reconectando...');
+
+      // Caiu sem gravar nada: e recusa, nao queda. Diz o motivo na tela e,
+      // na segunda vez, troca pro caminho pelo yt-dlp.
+      if (this.pedacos.length === pedacosAntes) {
+        this.falhasSeguidas = (this.falhasSeguidas || 0) + 1;
+        this.ultimoProblema = motivoDaFalha(erro + ' ' + (yt ? this.erroYt || '' : ''));
+        if (this.falhasSeguidas >= 2 && !this.viaYtDlp) {
+          this.viaYtDlp = true;
+          this.emitir({ tipo: 'aviso', msg: 'Não consegui gravar direto (' + this.ultimoProblema + '). Tentando gravar pelo yt-dlp...' });
+        } else {
+          this.emitir({ tipo: 'aviso', msg: 'A gravação não começou: ' + this.ultimoProblema + '. Tentando de novo...' });
+        }
+      } else {
+        this.falhasSeguidas = 0;
+      }
+      this.status('reconectando', this.ultimoProblema && this.falhasSeguidas ? 'Tentando de novo: ' + this.ultimoProblema : 'A transmissão caiu. Reconectando...');
       setTimeout(() => this.reconectar(), 3000);
     });
     this.status('gravando', 'Gravando a live.');
@@ -524,6 +575,8 @@ class SessaoAoVivo {
     this.pedacos.push(p);
     this.total += dur;
     this.ancora = { wall: Date.now(), t: this.total };
+    this.ultimoPedacoEm = Date.now();
+    this.ultimoProblema = null;
     this.medirAudio(p);
   }
 
@@ -576,6 +629,14 @@ class SessaoAoVivo {
     if (this.parado) return;
     this.lerLista();
     this.limparBuffer();
+
+    // Cao de guarda: o ffmpeg pode ficar "conectado" sem gravar nada (site
+    // segurando a conexao). 40s sem pedaco novo = derruba e tenta de novo,
+    // em vez de deixar a tela esperando a primeira imagem pra sempre.
+    if (this.proc && this.ultimoPedacoEm && Date.now() - this.ultimoPedacoEm > 40000) {
+      this.ultimoPedacoEm = Date.now();
+      try { this.proc.kill(); } catch (_) {}
+    }
 
     const nivel = this.medirNivel();
     if (nivel) {
@@ -876,6 +937,7 @@ class SessaoAoVivo {
     clearInterval(this.relogio);
     if (this.fecharChat) this.fecharChat();
     if (this.proc) { try { this.proc.kill(); } catch (_) {} }
+    if (this.procYt) { try { this.procYt.kill(); } catch (_) {} }
     // o que ainda esta na fila termina; depois o buffer (temporario) e apagado
     const limpar = () => {
       if (this.renderizando || this.fila.length) return setTimeout(limpar, 2000);

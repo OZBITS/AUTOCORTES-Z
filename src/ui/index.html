@@ -1813,6 +1813,8 @@
     $('cantosRapidos').style.display = ehSplit ? '' : 'none';
     $('alvos').style.display = ehSplit ? 'flex' : 'none';
     $('caixaRosto').style.display = ehSplit ? '' : 'none';
+    // tela cheia / fundo borrado / sem mexer: nao tem caixa pra marcar
+    $('caixaJogo').style.display = ehSplit || f === 'foco' ? '' : 'none';
     $('tagJogoTxt').textContent = f === 'foco' ? 'ÁREA' : 'JOGO';
     if (!ehSplit) alvoAtual = 'baixo';
   }
@@ -1844,7 +1846,10 @@
     $('caixaJogo').classList.toggle('foco', alvoAtual === 'baixo');
   }
 
-  const precisaEditor = () => (formatoDoEditor() === 'split' || formatoDoEditor() === 'foco') && !!videoDoEditor();
+  // No ao vivo a imagem aparece em qualquer formato: e a prova de que a live
+  // esta chegando, e a previa mostra como o clipe sai (tela cheia, fundo...).
+  const precisaEditor = () => !!videoDoEditor() &&
+    (modoEditor === 'aovivo' || formatoDoEditor() === 'split' || formatoDoEditor() === 'foco');
 
   function mostrarEditor() {
     const liga = precisaEditor();
@@ -2400,21 +2405,32 @@
   }
 
   /** A Twitch abre com ~30s de anuncio (pulado): a primeira imagem pode demorar. */
-  async function esperarImagem(pedaco) {
+  let esperandoDesde = 0;
+  async function esperarImagem(pedaco, estado) {
     clearTimeout(esperaImagem);
     if (pedaco) {
+      esperandoDesde = 0;
       fonteAoVivo = pedaco;
       $('avPrepInfo').textContent = 'já guardando a live. Marque a webcam, o foco e o texto, e comece.';
-      if (formatoDoEditor() === 'split' || formatoDoEditor() === 'foco') mostrarEditor();
-      else agendarPrevia();
+      mostrarEditor();
       return;
     }
-    $('avPrepInfo').textContent = 'esperando a primeira imagem da live' + (/twitch/i.test($('avUrl').value) ? ' (na Twitch passa o anúncio antes, uns 30s)...' : '...');
+    if (!esperandoDesde) esperandoDesde = Date.now();
+    const segundos = Math.round((Date.now() - esperandoDesde) / 1000);
+    // Sem imagem e com motivo: mostra o motivo, em vez de "esperando" pra sempre
+    if (estado && estado.problema) {
+      $('avPrepInfo').textContent = 'ainda sem imagem (' + segundos + 's): ' + estado.problema +
+        (estado.viaYtDlp ? '. Tentando pelo yt-dlp...' : '. Tentando de novo...') +
+        (segundos > 90 ? ' Se não sair, cancele e confira se a live abre no navegador.' : '');
+    } else {
+      $('avPrepInfo').textContent = 'esperando a primeira imagem da live (' + segundos + 's)' +
+        (/twitch/i.test($('avUrl').value) ? ' - na Twitch passa o anúncio antes, uns 30s...' : '...');
+    }
     esperaImagem = setTimeout(async () => {
       try {
         const e = await fetch('/api/aovivo/estado').then((x) => x.json());
         if (!e.ativo) return;
-        esperarImagem(e.ultimoPedaco);
+        esperarImagem(e.ultimoPedaco, e);
       } catch (_) { esperarImagem(null); }
     }, 2000);
   }

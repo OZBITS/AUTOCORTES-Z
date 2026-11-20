@@ -108,7 +108,10 @@ function acharCsc() {
 }
 
 function copiar(de, para, filtro) {
-  fs.cpSync(de, para, { recursive: true, filter: filtro || (() => true) });
+  // dereference: no GitHub Actions o cache do Hugging Face pode guardar os
+  // arquivos do modelo como link pra pasta blobs (que nao vai junto) - copia
+  // sempre o arquivo de verdade, nunca o link.
+  fs.cpSync(de, para, { recursive: true, dereference: true, filter: filtro || (() => true) });
 }
 
 const semLixo = (src) => !/[\\/](__pycache__|\.git)([\\/]|$)/.test(src) && !/\.pyc$/.test(src);

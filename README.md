@@ -60,11 +60,30 @@ Precisa de Node 22+, ffmpeg, yt-dlp e Python com faster-whisper
 | `src/sessoes.js` | o perfil de corte (um só, geral) |
 | `src/ui/index.html` | a janela |
 
-## Versão antiga
+## Instalador
 
-A versão com as sessões Lucas / Jamble / Investidor Sardinha está guardada na
-tag e na branch `versao-lucas-jamble`:
+O instalador (`Instalar-Cortador-Automatico.exe`) é montado pelo GitHub
+Actions a partir deste código ([.github/workflows/instalador.yml](.github/workflows/instalador.yml))
+e publicado em [Releases](https://github.com/gabrielworkspace/cortador-automatico/releases).
+Ele traz Node, Python com faster-whisper, ffmpeg, yt-dlp e os modelos de fala:
+quem instala não precisa de mais nada. Pra montar no próprio PC:
+`node instalador/montar.js`.
 
-```
-git checkout versao-lucas-jamble
-```
+## Privacidade
+
+Este programa não envia nenhuma informação pra outros sistemas na rede, a não
+ser quando a pessoa pede: baixar um vídeo ou uma live pelo link, ler o chat
+público de uma live (dá pra desligar) e atualizar o baixador de vídeos (yt-dlp)
+quando um download falha. Os vídeos e os cortes ficam só no computador de quem
+usa.
+
+## Política de assinatura de código
+
+- Autor e aprovador das versões: [gabrielworkspace](https://github.com/gabrielworkspace)
+- Os instaladores publicados são montados só pelo GitHub Actions deste
+  repositório, a partir do código público.
+
+## Licença
+
+[MIT](LICENSE). O instalador inclui programas de terceiros, cada um com a sua
+licença: Node.js, Python, faster-whisper, ffmpeg e yt-dlp.

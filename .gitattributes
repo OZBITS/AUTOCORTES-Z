@@ -1,0 +1,4 @@
+# Arquivos .bat precisam de quebra de linha do Windows (CRLF): com LF o cmd
+# erra os "goto" e o instalador falha de jeitos estranhos.
+*.bat text eol=crlf
+*.cmd text eol=crlf

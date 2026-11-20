@@ -30,8 +30,15 @@ def main():
 
     try:
         from faster_whisper import WhisperModel
-    except ImportError:
-        avisar("erro", msg="faster-whisper nao instalado. Rode instalar.bat de novo.")
+    except ModuleNotFoundError as e:
+        # falta o proprio faster-whisper (ou uma dependencia) NESTE Python
+        avisar("erro", msg="faster-whisper nao instalado no Python " + sys.executable +
+               " (" + str(e) + "). Rode o instalar.bat de novo: ele cria um Python so do programa.")
+        sys.exit(2)
+    except (ImportError, OSError) as e:
+        # instalado, mas nao abre: quase sempre falta o Visual C++ do Windows
+        avisar("erro", msg="O faster-whisper esta instalado mas nao abre neste PC (" + str(e)[:160] +
+               "). Instale o Visual C++ (https://aka.ms/vs/17/release/vc_redist.x64.exe) e abra o programa de novo.")
         sys.exit(2)
 
     avisar("progresso", pct=2, msg="Carregando o modelo de transcricao (%s)..." % args.modelo)

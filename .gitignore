@@ -31,3 +31,6 @@ desktop.ini
 
 # Fontes ficam so no PC (a Burbank e paga; o programa nao usa nenhuma delas)
 fontes/
+
+# Python so do programa (o instalar.bat cria)
+ambiente/

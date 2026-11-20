@@ -443,8 +443,23 @@ SE DER PROBLEMA
 "Não achei o ffmpeg"
     Rode o instalar.bat de novo.
 
+"Nao encontrei o Node.js"
+    Rode o instalar.bat: ele instala o Node.js junto. Se acabou de
+    instalar e o erro continua, reinicie o PC (o Windows às vezes só
+    enxerga o Node depois de reiniciar).
+
 "faster-whisper não instalado"
-    Rode o instalar.bat de novo.
+    Rode o instalar.bat de novo. Ele cria um Python só do programa,
+    na pasta "ambiente", e testa a transcrição no final - assim não
+    importa se o PC já tinha outro Python instalado.
+
+"O faster-whisper está instalado mas não abre neste PC"
+    Falta o Visual C++ do Windows. Instale por este link e abra o
+    programa de novo:  https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+O instalar.bat diz que não achou o winget
+    Abra a Microsoft Store, procure "Instalador de Aplicativo",
+    atualize e rode o instalar.bat de novo.
 
 "Não achei o arquivo" ao arrastar o vídeo
     O navegador não entrega o caminho completo por segurança.

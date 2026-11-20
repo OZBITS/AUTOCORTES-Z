@@ -49,21 +49,43 @@ function fontsdirRelativo() {
 
 // ---------------------------------------------------------------- python
 
+/**
+ * Qual Python roda a transcricao. O instalar.bat cria um Python so do
+ * programa na pasta "ambiente" - ele vem primeiro. Sem ele, nao basta achar
+ * "um" Python: quem ja tinha outro instalado ficava com o faster-whisper num
+ * e o programa chamando o outro ("faster-whisper nao instalado"). Entao cada
+ * candidato e testado e vale o primeiro que consegue carregar o faster-whisper.
+ */
+let pythonEscolhido = null;
+
 function acharPython() {
   if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
-
-  if (process.platform !== 'win32') return 'python3';  // 'python' sozinho nao existe no Debian
+  if (pythonEscolhido) return pythonEscolhido;
 
   const tentativas = [];
-  const local = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
-  for (const v of ['313', '312', '311', '310']) {
-    tentativas.push(path.join(local, 'Programs', 'Python', 'Python' + v, 'python.exe'));
+  if (process.platform === 'win32') {
+    tentativas.push(path.join(RAIZ, 'ambiente', 'Scripts', 'python.exe'));
+    const local = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+    const programas = process.env.ProgramFiles || 'C:\\Program Files';
+    for (const v of ['312', '311', '310', '313', '314']) {
+      tentativas.push(path.join(local, 'Programs', 'Python', 'Python' + v, 'python.exe'));
+      tentativas.push(path.join(programas, 'Python' + v, 'python.exe'));
+      tentativas.push(path.join('C:\\', 'Python' + v, 'python.exe'));
+    }
+  } else {
+    tentativas.push(path.join(RAIZ, 'ambiente', 'bin', 'python'));
   }
-  for (const v of ['313', '312', '311', '310']) {
-    tentativas.push(path.join('C:', 'Python' + v, 'python.exe'));
+  const existentes = tentativas.filter((t) => fs.existsSync(t));
+  // e os do PATH, por ultimo ('python' sozinho nao existe no Debian)
+  existentes.push(process.platform === 'win32' ? 'python' : 'python3');
+
+  const { spawnSync } = require('child_process');
+  for (const py of existentes) {
+    const r = spawnSync(py, ['-c', 'import faster_whisper'], { windowsHide: true, timeout: 60000 });
+    if (r.status === 0) { pythonEscolhido = py; return py; }
   }
-  for (const t of tentativas) if (fs.existsSync(t)) return t;
-  return 'python';
+  // nenhum carrega: devolve o primeiro, e o transcrever.py explica o motivo
+  return existentes[0];
 }
 
 // ---------------------------------------------------------------- utilidades
@@ -937,4 +959,4 @@ function explicarPoucosNovos(sairam, pedidos, jaTinha, d, minAtual, trecho) {
   return { titulo, detalhe, sugestao };
 }
 
-module.exports = { processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, SAIDA, TRABALHO };
+module.exports = { processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, acharPython, SAIDA, TRABALHO };

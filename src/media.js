@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const desempenho = require('./desempenho');
 
 // No Windows o winget instala o ffmpeg mas o PATH so vale em processo novo,
 // entao procuramos nos lugares conhecidos do WinGet. No Linux/container o
@@ -60,10 +61,15 @@ async function garantirFfmpeg() {
 
 function rodar(cmd, args, opcoes) {
   opcoes = opcoes || {};
+  // modo leve: menos nucleos pra recodificar e prioridade baixa
+  args = desempenho.argsDoFfmpeg(args);
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { windowsHide: true, cwd: opcoes.cwd });
+    desempenho.aliviar(p);
     let saida = '';
     let erro = '';
+
+    p.stdout.setEncoding('utf8');
 
     p.stdout.on('data', (d) => {
       const t = d.toString();
@@ -75,6 +81,7 @@ function rodar(cmd, args, opcoes) {
         }
       }
     });
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erro += d.toString(); if (erro.length > 60000) erro = erro.slice(-40000); });
     p.on('error', reject);
     p.on('close', (code) => {
@@ -285,20 +292,9 @@ async function cortarClipe(o) {
   // o.teaser = { inicio (tempo absoluto no video), duracao }
   const teaser = prepararTeaser(o);
 
-  // Sem reenquadrar e sem legenda nao ha nada pra desenhar: copiamos o
-  // fluxo original bit a bit. Zero recodificacao, zero perda.
-  if (o.formato === 'original' && !o.arquivoAss) {
-    await rodar(ffmpeg, [
-      '-y', '-ss', String(o.inicio), '-i', o.video, '-t', String(o.duracao),
-      '-c', 'copy', '-avoid_negative_ts', 'make_zero',
-      '-movflags', '+faststart',
-      '-progress', 'pipe:1', '-nostats', '-loglevel', 'error',
-      o.destino,
-    ], {
-      aoProgredir: (seg) => { if (o.aoProgredir) o.aoProgredir(Math.min(1, seg / o.duracao)); },
-    });
-    return o.destino;
-  }
+  // Formato original tambem recodifica. Copiar bit a bit (-c copy) so consegue
+  // comecar num quadro-chave: o clipe saia ate alguns segundos ANTES do ponto
+  // escolhido e mais comprido que o pedido (medido: 9,3s num corte de 8s).
 
   const args = [
     '-y',
@@ -425,6 +421,7 @@ function rodarBinario(cmd, args) {
     const pedacos = [];
     let erro = '';
     p.stdout.on('data', (d) => pedacos.push(d));
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erro += d.toString(); });
     p.on('error', reject);
     p.on('close', (code) => {

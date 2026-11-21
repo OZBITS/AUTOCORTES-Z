@@ -21,6 +21,7 @@ const RAIZ = path.join(__dirname, '..');
 // continua igual a sempre: dentro da propria pasta do projeto.
 // as pastas de dados mudam quando a pessoa escolhe outro disco: sempre pergunte ao pastas.js
 const pastas = require('./pastas');
+const desempenho = require('./desempenho');
 const MODELOS = process.env.MODELOS_DIR || path.join(RAIZ, 'modelos');
 // Fontes que vem com o programa (usadas no gancho e na legenda queimada)
 const FONTES = path.join(RAIZ, 'fontes');
@@ -131,7 +132,7 @@ function conferirTrecho(t, duracaoVideo, modo) {
 
 // ---------------------------------------------------------------- transcricao
 
-function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir) {
+function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir, aoAvisar) {
   return new Promise((resolve, reject) => {
     const py = acharPython();
     const script = path.join(RAIZ, 'py', 'transcrever.py');
@@ -152,12 +153,17 @@ function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir) {
         // isso pediria 46 threads: contexto trocando o tempo todo e a
         // transcricao fica MAIS LENTA do que com poucas threads. NUM_THREADS
         // deixa o dono do servidor fixar o numero certo.
-        OMP_NUM_THREADS: process.env.NUM_THREADS || String(Math.max(1, os.cpus().length - 2)),
+        // modo leve usa metade dos nucleos; total, quase todos
+        OMP_NUM_THREADS: process.env.NUM_THREADS || String(desempenho.nucleos()),
+        NUM_THREADS: process.env.NUM_THREADS || String(desempenho.nucleos()),
       }),
     });
+    desempenho.aliviar(p);
 
     let resto = '';
     let erroFinal = '';
+
+    p.stdout.setEncoding('utf8');
 
     p.stdout.on('data', (d) => {
       resto += d.toString();
@@ -170,8 +176,11 @@ function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir) {
         try { ev = JSON.parse(t); } catch (_) { continue; }
         if (ev.tipo === 'progresso' && aoProgredir) aoProgredir(ev.pct, ev.msg);
         if (ev.tipo === 'erro') erroFinal = ev.msg;
+        if (ev.tipo === 'aviso' && aoAvisar) aoAvisar(ev.msg);
       }
     });
+
+    p.stderr.setEncoding('utf8');
 
     p.stderr.on('data', (d) => {
       const t = d.toString();
@@ -219,8 +228,10 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
 
   const assinatura = assinaturaDoArquivo(video);
   const wav = path.join(pastas.trabalho(), assinatura + '.wav');
-  // o v2 no nome invalida o cache quando a gente muda como transcreve
-  const jsonTranscricao = path.join(pastas.trabalho(), assinatura + '-' + (opcoes.modelo || 'small') + '-v2.json');
+  // o v3 no nome invalida o cache quando a gente muda como transcreve; o idioma
+  // tambem entra: trocar de lingua tem que transcrever de novo, nao reaproveitar
+  const idiomaCache = /^[a-z]{2}$/.test(String(opcoes.idioma || '')) ? opcoes.idioma : 'pt';
+  const jsonTranscricao = path.join(pastas.trabalho(), assinatura + '-' + (opcoes.modelo || 'small') + '-' + idiomaCache + '-v3.json');
 
   // ---- 2. audio
   if (!fs.existsSync(wav)) {
@@ -245,7 +256,8 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
         // o python vai de 2 a 94; aqui isso vira 8 a 60
         const p = 8 + (Math.max(0, Math.min(94, pct)) / 94) * 52;
         emitir(p, 'transcricao', msg);
-      }
+      },
+      (msg) => avisar({ tipo: 'aviso', msg })
     );
   }
 
@@ -769,11 +781,29 @@ function fonteDoClipe(pasta, sessao, clipe) {
  * Aplica o que a pessoa corrigiu na legenda: { "<inicio em centesimos>": "texto" }.
  * Texto vazio tira a palavra da legenda.
  */
-function aplicarEdicoes(palavras, edicoes) {
+/**
+ * A chave de cada palavra: o inicio em centesimos. O Whisper as vezes da o
+ * MESMO inicio pra duas palavras seguidas (16% delas nos testes) - ai a segunda
+ * vira "123_2", a terceira "123_3"... senao corrigir uma mudava as duas.
+ * Conta sobre a transcricao INTEIRA, igual a janela do editor.
+ */
+function chavesDasPalavras(todas) {
+  const vistas = new Map();
+  return todas.map((p) => {
+    const cs = Math.round(Math.round(p.inicio * 100) / 100 * 100);
+    const n = (vistas.get(cs) || 0) + 1;
+    vistas.set(cs, n);
+    return n === 1 ? String(cs) : cs + '_' + n;
+  });
+}
+
+function aplicarEdicoes(palavras, edicoes, chaves) {
   if (!edicoes || typeof edicoes !== 'object') return palavras;
+  chaves = chaves || chavesDasPalavras(palavras);
   const saida = [];
-  for (const p of palavras) {
-    const chave = String(Math.round(p.inicio * 100));
+  for (let i = 0; i < palavras.length; i++) {
+    const p = palavras[i];
+    const chave = chaves[i];
     if (!Object.prototype.hasOwnProperty.call(edicoes, chave)) { saida.push(p); continue; }
     const texto = String(edicoes[chave] || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     if (texto) saida.push(Object.assign({}, p, { texto }));
@@ -834,7 +864,10 @@ async function refazerClipe(pedido, avisar) {
   if (fonte.transcricao && fs.existsSync(fonte.transcricao)) {
     const t = JSON.parse(fs.readFileSync(fonte.transcricao, 'utf8'));
     const todas = achatarPalavras(t);
-    palavras = aplicarEdicoes(todas.filter((p) => p.fim > inicio && p.inicio < inicio + duracao), edicoes);
+    const chaves = chavesDasPalavras(todas);
+    const dentro = [], chavesDentro = [];
+    todas.forEach((p, i) => { if (p.fim > inicio && p.inicio < inicio + duracao) { dentro.push(p); chavesDentro.push(chaves[i]); } });
+    palavras = aplicarEdicoes(dentro, edicoes, chavesDentro);
     texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim() || antigo.texto;
   } else if (legendar) {
     avisar({ tipo: 'aviso', msg: 'A fala desse clipe ainda não foi ouvida: refiz o vídeo, mas sem legenda.' });
@@ -1028,4 +1061,4 @@ function explicarPoucosNovos(sairam, pedidos, jaTinha, d, minAtual, trecho) {
   return { titulo, detalhe, sugestao };
 }
 
-module.exports = { processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, acharPython, fonteDoClipe };
+module.exports = { chavesDasPalavras, processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, acharPython, fonteDoClipe };

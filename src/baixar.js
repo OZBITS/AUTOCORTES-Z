@@ -13,14 +13,19 @@ const pastas = require('./pastas'); // a pasta de videos baixados muda quando a 
 
 // Mesma historia do ffmpeg: o winget instala mas o PATH so vale em processo
 // novo. Da pra apontar um binario proprio pela variavel YTDLP_PATH.
-function acharYtDlp() {
-  if (process.env.YTDLP_PATH) return [process.env.YTDLP_PATH];
+// Copia reserva baixada pelo proprio programa quando o yt-dlp some (o
+// antivirus costuma apagar o yt-dlp.exe achando que e virus).
+const PASTA_RESERVA = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'CortadorAutomatico', 'bin');
+const YTDLP_RESERVA = path.join(PASTA_RESERVA, 'yt-dlp.exe');
+const URL_YTDLP = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
 
+function acharYtDlp() {
   if (process.platform !== 'win32') {
-    return ['yt-dlp', '/opt/venv/bin/yt-dlp', '/usr/local/bin/yt-dlp'];
+    return [process.env.YTDLP_PATH, 'yt-dlp', '/opt/venv/bin/yt-dlp', '/usr/local/bin/yt-dlp'].filter(Boolean);
   }
 
-  const candidatos = ['yt-dlp.exe'];
+  // o que vem com o instalador primeiro, mas sem desistir se ele sumiu
+  const candidatos = [process.env.YTDLP_PATH, path.join(RAIZ, 'runtime', 'yt-dlp.exe'), path.join(RAIZ, '..', 'runtime', 'yt-dlp.exe'), YTDLP_RESERVA, 'yt-dlp.exe'].filter(Boolean);
   const base = path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'WinGet', 'Packages');
   try {
     for (const dir of fs.readdirSync(base)) {
@@ -45,12 +50,38 @@ function testar(cmd) {
   });
 }
 
+/** Baixa o yt-dlp.exe oficial (GitHub do yt-dlp) pra pasta reserva. */
+async function baixarYtDlpReserva() {
+  fs.mkdirSync(PASTA_RESERVA, { recursive: true });
+  const r = await fetch(URL_YTDLP, { redirect: 'follow' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const dados = Buffer.from(await r.arrayBuffer());
+  if (dados.length < 1000000) throw new Error('arquivo incompleto');
+  const tmp = YTDLP_RESERVA + '.baixando';
+  fs.writeFileSync(tmp, dados);
+  fs.renameSync(tmp, YTDLP_RESERVA);
+}
+
+let baixandoReserva = null;
+
 async function garantirYtDlp() {
-  if (YTDLP) return YTDLP;
+  if (YTDLP && (YTDLP === 'yt-dlp' || YTDLP === 'yt-dlp.exe' || fs.existsSync(YTDLP))) return YTDLP;
+  YTDLP = null;
   for (const c of acharYtDlp()) {
     if (await testar(c)) { YTDLP = c; return YTDLP; }
   }
-  throw new Error('Nao encontrei o yt-dlp. Rode o instalar.bat de novo.');
+  if (process.platform === 'win32') {
+    // nao achou em lugar nenhum: baixa de novo sozinho, uma vez so
+    try {
+      if (!baixandoReserva) baixandoReserva = baixarYtDlpReserva().finally(() => { baixandoReserva = null; });
+      await baixandoReserva;
+      if (await testar(YTDLP_RESERVA)) { YTDLP = YTDLP_RESERVA; return YTDLP; }
+    } catch (_) { /* sem internet ou bloqueado: cai na mensagem abaixo */ }
+    throw new Error('O yt-dlp (a peça que baixa os vídeos) sumiu e não consegui baixar de novo. ' +
+      'Quase sempre é o antivírus que apagou: libere a pasta do Cortador Automático no antivírus e instale de novo ' +
+      '(baixe o instalador em gabrielworkspace.github.io/cortador-automatico).');
+  }
+  throw new Error('Não encontrei o yt-dlp. Instale com: pip install yt-dlp');
 }
 
 /** Aceita link do YouTube em qualquer formato, e tambem de outros sites. */
@@ -133,7 +164,9 @@ function espiarUma(url, extras) {
       .concat(extras, [url]), { windowsHide: true });
     let saida = '';
     let erro = '';
+    p.stdout.setEncoding('utf8');
     p.stdout.on('data', (d) => { saida += d.toString(); });
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erro += d.toString(); });
     p.on('error', reject);
     p.on('close', (code) => {
@@ -202,7 +235,9 @@ function atualizarYtDlp(bin) {
   return new Promise((resolve) => {
     const p = spawn(bin, ['-U'], { windowsHide: true });
     let saida = '';
+    p.stdout.setEncoding('utf8');
     p.stdout.on('data', (d) => { saida += d.toString(); });
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { saida += d.toString(); });
     p.on('error', () => resolve(false));
     p.on('close', () => resolve(/Updated yt-dlp|is up to date/i.test(saida)));
@@ -379,7 +414,10 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
       }
     }
 
+    p.stdout.setEncoding('utf8');
+
     p.stdout.on('data', (d) => processar(d.toString(), 'out'));
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => {
       const t = d.toString();
       erro += t;
@@ -591,6 +629,7 @@ function baixarPedacos(ffmpeg, segs, destino, avisar) {
 
     let erroFfmpeg = '';
     let falhou = null;
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erroFfmpeg = (erroFfmpeg + d.toString()).slice(-4000); });
     p.stdin.on('error', () => {}); // o ffmpeg morrendo aparece no close, nao aqui
     p.on('error', (e) => { falhou = falhou || e; reject(e); });

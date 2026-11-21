@@ -15,11 +15,33 @@ const AMARELO = '&H0000E5FF';
 const PRETO = '&H00000000';
 
 function tempoAss(s) {
-  s = Math.max(0, s);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const seg = s % 60;
+  // arredonda pro centesimo ANTES de separar: 59.996 virava "0:00:60.00"
+  const cs = Math.round(Math.max(0, Number(s) || 0) * 100);
+  const h = Math.floor(cs / 360000);
+  const m = Math.floor((cs % 360000) / 6000);
+  const seg = (cs % 6000) / 100;
   return h + ':' + String(m).padStart(2, '0') + ':' + seg.toFixed(2).padStart(5, '0');
+}
+
+// Legenda nao pode ficar parada na tela durante um silencio: se a proxima
+// palavra demora mais que isso, o bloco fecha e a palavra some logo depois de dita.
+const PAUSA_QUEBRA = 0.7;
+const SEGURA_DEPOIS = 0.35;
+
+/** Agrupa em blocos de ate 3 palavras, sem juntar palavras separadas por pausa. */
+function montarBlocos(palavras, maximo) {
+  const lista = (palavras || [])
+    .filter((p) => p && isFinite(p.inicio) && isFinite(p.fim) && String(p.texto || '').trim())
+    .slice().sort((a, b) => a.inicio - b.inicio);
+  const blocos = [];
+  let atual = [];
+  for (const p of lista) {
+    const ultima = atual[atual.length - 1];
+    if (atual.length && (atual.length >= maximo || p.inicio - ultima.fim > PAUSA_QUEBRA)) { blocos.push(atual); atual = []; }
+    atual.push(p);
+  }
+  if (atual.length) blocos.push(atual);
+  return blocos;
 }
 
 function escapar(t) {
@@ -154,22 +176,25 @@ function gerarAss(palavras, offset, destino, opcoes) {
 
   // A legenda palavra-por-palavra e o gancho sao independentes: a pessoa pode
   // querer so o gancho no topo, sem a legenda embaixo cobrindo o resto do video.
-  const blocos = [];
-  if (opcoes.incluirPalavras !== false) {
-    // Agrupa em blocos curtos - texto comprido na tela ninguem le
-    for (let i = 0; i < palavras.length; i += PALAVRAS_POR_BLOCO) {
-      const grupo = palavras.slice(i, i + PALAVRAS_POR_BLOCO);
-      if (grupo.length) blocos.push(grupo);
-    }
-  }
+  // Agrupa em blocos curtos - texto comprido na tela ninguem le
+  // (palavra que ja tinha terminado antes do clipe comecar nao entra)
+  const doClipe = (palavras || []).filter((p) => p && Number(p.fim) - offset > 0.05);
+  const blocos = opcoes.incluirPalavras !== false ? montarBlocos(doClipe, PALAVRAS_POR_BLOCO) : [];
 
-  for (const bloco of blocos) {
+  for (let b = 0; b < blocos.length; b++) {
+    const bloco = blocos[b];
+    // o bloco seguinte nunca pode entrar com este ainda na tela: duas legendas
+    // ao mesmo tempo o ffmpeg empilha uma em cima da outra
+    const proximoBloco = blocos[b + 1] ? blocos[b + 1][0].inicio - offset : Infinity;
     for (let i = 0; i < bloco.length; i++) {
       const atual = bloco[i];
       const inicio = Math.max(0, atual.inicio - offset);
-      // A ultima palavra do bloco segura ate a proxima comecar (evita piscada)
+      // dentro do bloco a palavra segura ate a proxima comecar (evita piscada);
+      // a ultima segura um tico depois de dita, sem invadir o proximo bloco
       const proxima = bloco[i + 1];
-      const fim = Math.max(inicio + 0.12, (proxima ? proxima.inicio : atual.fim + 0.18) - offset);
+      const desejado = proxima ? proxima.inicio - offset : atual.fim - offset + SEGURA_DEPOIS;
+      const fim = Math.max(inicio + 0.12, Math.min(desejado, proximoBloco));
+      if (fim <= 0) continue; // palavra que terminou antes do clipe comecar
 
       const texto = bloco.map((p, j) => {
         const limpo = escapar(p.texto);
@@ -192,15 +217,12 @@ function gerarAss(palavras, offset, destino, opcoes) {
 
 /** Legenda .srt simples, pra quem quiser editar depois no CapCut/Premiere. */
 function gerarSrt(palavras, offset, destino) {
-  const blocos = [];
-  for (let i = 0; i < palavras.length; i += 8) {
-    const g = palavras.slice(i, i + 8);
-    if (g.length) blocos.push(g);
-  }
+  const blocos = montarBlocos((palavras || []).filter((p) => p && Number(p.fim) - offset > 0.05), 8);
 
   const partes = blocos.map((g, idx) => {
     const ini = Math.max(0, g[0].inicio - offset);
-    const fim = Math.max(ini + 0.3, g[g.length - 1].fim - offset);
+    const seguinte = blocos[idx + 1] ? blocos[idx + 1][0].inicio - offset : Infinity;
+    const fim = Math.max(ini + 0.3, Math.min(g[g.length - 1].fim - offset, seguinte));
     return [
       String(idx + 1),
       tempoSrt(ini) + ' --> ' + tempoSrt(fim),
@@ -214,11 +236,12 @@ function gerarSrt(palavras, offset, destino) {
 }
 
 function tempoSrt(s) {
-  s = Math.max(0, s);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const seg = Math.floor(s % 60);
-  const ms = Math.round((s - Math.floor(s)) * 1000);
+  // arredonda pro milesimo ANTES de separar: 1.9996 virava "00:00:01,1000"
+  const total = Math.round(Math.max(0, Number(s) || 0) * 1000);
+  const h = Math.floor(total / 3600000);
+  const m = Math.floor((total % 3600000) / 60000);
+  const seg = Math.floor((total % 60000) / 1000);
+  const ms = total % 1000;
   return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' +
          String(seg).padStart(2, '0') + ',' + String(ms).padStart(3, '0');
 }

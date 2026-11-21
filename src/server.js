@@ -11,6 +11,7 @@ const { URL } = require('url');
 
 // Onde gravar (disco/pasta) fica no pastas.js: muda na hora, pelos Ajustes.
 const pastas = require('./pastas');
+const desempenho = require('./desempenho');
 
 const { processar, refazerClipe, extrairMais, fontsdirRelativo } = require('./pipeline');
 const legenda = require('./legenda');
@@ -19,6 +20,12 @@ const baixador = require('./baixar');
 const projetos = require('./projetos');
 const sessoes = require('./sessoes');
 const aovivo = require('./aovivo');
+
+// Um erro solto em algum canto (um ffmpeg que sumiu, uma conexao que caiu)
+// nao pode derrubar o programa inteiro: a janela ficaria dando "Failed to fetch"
+// em tudo. Registra e segue rodando.
+process.on('uncaughtException', (e) => { console.error('[erro solto]', e && e.stack ? e.stack : e); });
+process.on('unhandledRejection', (e) => { console.error('[promessa sem tratamento]', e && e.stack ? e.stack : e); });
 
 const RAIZ = path.join(__dirname, '..');
 // PORT e o nome que as nuvens usam; PORTA e o nosso, pra rodar local.
@@ -54,18 +61,26 @@ function json(res, codigo, corpo) {
   res.end(texto);
 }
 
-function lerCorpo(req) {
+// Junta os pedacos como bytes e so no fim vira texto: somar pedaco a pedaco
+// como texto quebrava acento que caisse na divisa entre dois pedacos.
+function lerBytes(req, limite) {
   return new Promise((resolve, reject) => {
-    let dados = '';
+    const partes = [];
+    let total = 0;
     req.on('data', (c) => {
-      dados += c;
-      if (dados.length > 2e6) { req.destroy(); reject(new Error('corpo grande demais')); }
+      total += c.length;
+      if (total > limite) { req.destroy(); reject(new Error('corpo grande demais')); return; }
+      partes.push(c);
     });
-    req.on('end', () => {
-      try { resolve(dados ? JSON.parse(dados) : {}); }
-      catch (e) { reject(new Error('json invalido')); }
-    });
+    req.on('end', () => resolve(Buffer.concat(partes).toString('utf8')));
     req.on('error', reject);
+  });
+}
+
+function lerCorpo(req) {
+  return lerBytes(req, 2e6).then((dados) => {
+    try { return dados ? JSON.parse(dados) : {}; }
+    catch (e) { throw new Error('json invalido'); }
   });
 }
 
@@ -155,15 +170,7 @@ function estaLogado(req) {
 }
 
 function lerCorpoTexto(req, limite) {
-  return new Promise((resolve, reject) => {
-    let dados = '';
-    req.on('data', (c) => {
-      dados += c;
-      if (dados.length > (limite || 1e5)) { req.destroy(); reject(new Error('corpo grande demais')); }
-    });
-    req.on('end', () => resolve(dados));
-    req.on('error', reject);
-  });
+  return lerBytes(req, limite || 1e5);
 }
 
 function paginaLogin(erro) {
@@ -861,6 +868,21 @@ const servidor = http.createServer(async (req, res) => {
 
     if (rota === '/api/saida') {
       return json(res, 200, { pasta: pastas.saida() });
+    }
+
+    // ---------------------------------------------------------- modo leve / total
+    // Quanto do processador o programa usa (escolhido na primeira vez que abre)
+    if (rota === '/api/desempenho' && req.method === 'GET') {
+      return json(res, 200, desempenho.resumo());
+    }
+    if (rota === '/api/desempenho' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      try {
+        desempenho.definir(corpo.modo);
+        return json(res, 200, desempenho.resumo());
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
     }
 
     // ---------------------------------------------------------- onde salvar

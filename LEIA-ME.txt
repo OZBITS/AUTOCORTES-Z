@@ -19,7 +19,7 @@ COMO ABRIR
 No topo da janela tem:
    - o campo pra COLAR O LINK (live ou vídeo) e o botão "Ir"
    - PROJETOS: tudo que já foi cortado
-   - AJUSTES: idioma da fala, legenda, velocidade...
+   - AJUSTES: onde salvar, uso do processador, legenda, velocidade...
 
 Cole qualquer link no topo e aperte "Ir": o programa descobre sozinho
 se é uma live acontecendo agora, um canal offline ou um vídeo gravado,
@@ -167,6 +167,29 @@ QUANTO TEMPO DEMORA
 A parte demorada é a transcrição. Se rodar o MESMO vídeo de novo,
 ele reaproveita a transcrição e fica quase instantâneo — bom pra
 testar outro formato ou outra quantidade de cortes.
+
+
+MODO LEVE OU PROCESSADOR TOTAL
+------------------------------
+
+Na primeira vez que abre, o programa mostra o seu PC (processador,
+núcleos e RAM) e pergunta como ele deve usar o processador:
+
+  Modo leve          metade do processador, com prioridade baixa.
+                     Demora mais, mas o PC esquenta bem menos e dá
+                     pra usar ele enquanto corta. Pra notebook ou PC
+                     com até 8 GB de RAM, 2 a 4 núcleos, ou que
+                     esquenta, trava ou desliga enquanto gera cortes.
+
+  Processador total  quase todo o processador. Mais rápido. Pra PC
+                     com 16 GB de RAM ou mais e 6 núcleos ou mais.
+
+Dá pra trocar quando quiser em Ajustes > "Uso do processador".
+A gravação da live nunca fica mais lenta: só a geração dos cortes.
+
+Se o PC DESLIGA sozinho enquanto gera os cortes, é o processador
+esquentando demais (ou a fonte não aguentando): use o modo leve,
+limpe a poeira do cooler e deixe o PC ventilado.
 
 
 O QUE CADA OPÇÃO FAZ

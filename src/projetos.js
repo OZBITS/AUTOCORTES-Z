@@ -13,7 +13,7 @@ const path = require('path');
 
 const media = require('./media');
 const { achatarPalavras } = require('./score');
-const { assinaturaDoArquivo, fonteDoClipe } = require('./pipeline');
+const { assinaturaDoArquivo, fonteDoClipe, chavesDasPalavras } = require('./pipeline');
 const pastas = require('./pastas');
 const sessoes = require('./sessoes');
 
@@ -236,15 +236,16 @@ function palavras(pedido, de, ate) {
 
   const a = Number(de) || 0;
   const b = Number(ate) || 0;
-  return {
-    palavras: achatarPalavras(transcricao)
-      .filter((p) => p.fim > a && p.inicio < b)
-      .map((p) => ({
-        i: Math.round(p.inicio * 100) / 100,
-        f: Math.round(p.fim * 100) / 100,
-        t: p.texto,
-      })),
-  };
+  // a chave de cada palavra conta sobre a transcricao inteira (ver chavesDasPalavras)
+  const todas = achatarPalavras(transcricao);
+  const chaves = chavesDasPalavras(todas);
+  const saida = [];
+  todas.forEach((p, n) => {
+    if (p.fim > a && p.inicio < b) {
+      saida.push({ i: Math.round(p.inicio * 100) / 100, f: Math.round(p.fim * 100) / 100, t: p.texto, k: chaves[n] });
+    }
+  });
+  return { palavras: saida };
 }
 
 // ---------------------------------------------------------------- tira de imagens

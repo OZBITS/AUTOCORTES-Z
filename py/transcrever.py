@@ -24,7 +24,7 @@ def main():
     p.add_argument("--audio", required=True)
     p.add_argument("--saida", required=True)
     p.add_argument("--modelo", default="small")
-    p.add_argument("--idioma", default="pt")
+    p.add_argument("--idioma", default="pt")  # o programa e pra cortes brasileiros
     p.add_argument("--duracao", type=float, default=0.0)
     args = p.parse_args()
 
@@ -91,15 +91,28 @@ def main():
         # caminho o faster-whisper abre o arquivo pelo PyAV, e o PyAV 19 quebrou
         # isso ("open() got an unexpected keyword argument 'metadata_errors'").
         lido = ler_wav(args.audio)
-        segmentos_iter, info = modelo.transcribe(lido if lido is not None else args.audio, **opcoes)
+        entrada = lido if lido is not None else args.audio
+        segmentos_iter, info = modelo.transcribe(entrada, **opcoes)
         duracao = args.duracao or float(getattr(info, "duration", 0) or 0)
-        idioma = getattr(info, "language", args.idioma)
+        idioma = getattr(info, "language", None) or opcoes["language"] or args.idioma
         fontes = [(0.0, segmentos_iter, float("inf"))]
     else:
         duracao = args.duracao
-        idioma = args.idioma
+        # o idioma sai do primeiro pedaco e vale pra live inteira: cada pedaco
+        # descobrindo o seu poderia trocar de lingua no meio
+        primeiro = next(pedacos, None)
+        if primeiro is None:
+            avisar("erro", msg="Nao encontrei fala nenhuma no audio desse video.")
+            sys.exit(3)
+        idioma = opcoes["language"] or descobrir(modelo, primeiro[1])[0] or args.idioma
+        opcoes["language"] = idioma
+
+        def todos():
+            yield primeiro
+            for p_ in pedacos:
+                yield p_
         fontes = ((inicio, modelo.transcribe(audio, **opcoes)[0], limite)
-                  for inicio, audio, limite in pedacos)
+                  for inicio, audio, limite in todos())
 
     segmentos = []
     ultimo_aviso = 0.0
@@ -155,6 +168,16 @@ def main():
 
     avisar("progresso", pct=94, msg="Transcricao pronta: %d palavras." % total_palavras)
     avisar("ok", palavras=total_palavras, segmentos=len(segmentos))
+
+
+def descobrir(modelo, audio):
+    """Que lingua se fala no audio: (codigo, certeza de 0 a 1). Falhou: (None, 0)."""
+    try:
+        _, info = modelo.transcribe(audio, language=None, task="transcribe", beam_size=1,
+                                    vad_filter=True, vad_parameters={"min_silence_duration_ms": 400})
+        return getattr(info, "language", None), float(getattr(info, "language_probability", 0) or 0)
+    except Exception:
+        return None, 0.0
 
 
 def mmss(s):

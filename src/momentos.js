@@ -9,6 +9,7 @@
  */
 
 const { spawn } = require('child_process');
+const desempenho = require('./desempenho');
 const fs = require('fs');
 
 // ---------------------------------------------------------------- audio
@@ -140,8 +141,11 @@ function mudancasDeCena(ffmpeg, video, aoProgredir, duracaoTotal) {
     ];
 
     const p = spawn(ffmpeg, args, { windowsHide: true });
+    desempenho.aliviar(p);
     const achados = [];
     let resto = '';
+
+    p.stderr.setEncoding('utf8');
 
     p.stderr.on('data', (d) => {
       resto += d.toString();

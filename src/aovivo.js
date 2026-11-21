@@ -136,7 +136,9 @@ async function resolverAoVivo(url) {
     let saida = '';
     let erro = '';
     const relogio = setTimeout(() => { try { p.kill(); } catch (_) {} }, 60000);
+    p.stdout.setEncoding('utf8');
     p.stdout.on('data', (d) => { saida += d.toString(); });
+    p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erro += d.toString(); });
     p.on('error', (e) => { clearTimeout(relogio); reject(e); });
     p.on('close', (code) => {
@@ -423,6 +425,7 @@ class SessaoAoVivo {
     if (this.viaYtDlp) {
       const bin = await baixador.garantirYtDlp();
       yt = spawn(bin, ['--no-warnings', '--no-part', '--hls-use-mpegts', '-f', FORMATO_UNICO, '-o', '-', this.url], { windowsHide: true });
+      yt.stderr.setEncoding('utf8');
       yt.stderr.on('data', (d) => { this.erroYt = (String(this.erroYt || '') + d.toString()).slice(-600); });
       yt.on('error', () => {});
       this.procYt = yt;
@@ -445,6 +448,7 @@ class SessaoAoVivo {
     this.proc = spawn(ffmpeg, args, { windowsHide: true });
     if (yt) { yt.stdout.pipe(this.proc.stdin); this.proc.stdin.on('error', () => {}); }
     let erro = '';
+    this.proc.stderr.setEncoding('utf8');
     this.proc.stderr.on('data', (d) => { erro = (erro + d.toString()).slice(-800); });
     this.proc.on('close', () => {
       this.proc = null;
@@ -590,6 +594,7 @@ class SessaoAoVivo {
         '-af', 'aresample=8000,asetnsamples=4000:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level',
         '-f', 'null', '-'], { windowsHide: true });
       let t = '';
+      proc.stderr.setEncoding('utf8');
       proc.stderr.on('data', (d) => { t += d.toString(); });
       proc.on('close', () => res(t));
       proc.on('error', () => res(''));
@@ -819,10 +824,13 @@ class SessaoAoVivo {
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
           '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       } else {
-        // sem mexer na imagem: recodifica so o comeco seria trabalho demais,
-        // entao vai inteiro a partir do quadro-chave mais perto
+        // sem mexer na imagem, mas recodificando: copiar (-c copy) so comeca num
+        // quadro-chave, e o clipe saia ate alguns segundos antes do lance e mais
+        // comprido que o pedido. Recodificar corta no quadro exato.
         args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
-          '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy', '-avoid_negative_ts', 'make_zero'];
+          '-t', dur.toFixed(3), '-map', '0:v:0', '-map', '0:a?',
+          '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+          '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       }
       args.push('-movflags', '+faststart', mp4);
       await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });

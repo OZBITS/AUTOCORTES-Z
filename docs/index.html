@@ -84,7 +84,7 @@
   .menu a:hover { color: var(--texto); }
   .topo .acoes-topo { display: flex; gap: 8px; align-items: center; }
   @media (max-width: 900px) { .menu { display: none; } .topo .acoes-topo { margin-left: auto; } }
-  @media (max-width: 480px) { .estrelas-topo { display: none !important; } .logo span { display: none; } }
+  @media (max-width: 480px) { .estrelas-topo { display: none !important; } .logo span { display: none; } .so-largo { display: none; } }
 
   /* ---------------------------------------------------------- botoes */
   .btn {
@@ -307,13 +307,112 @@
   .modal .dica { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--linha); font-size: 13px; color: var(--texto3); text-align: left; }
   .modal .dica b { color: var(--texto2); }
 
-  /* entrada suave das secoes */
-  .surge { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--suave), transform .7s var(--suave); }
-  .surge.visto { opacity: 1; transform: none; }
+  /* ---------------------------------------------------------- como funciona (rolagem com as telas reais) */
+  .historia { display: grid; grid-template-columns: .9fr 1.1fr; gap: 56px; align-items: start; }
+  .etapas { display: grid; }
+  .etapa { min-height: 72vh; display: flex; flex-direction: column; justify-content: center; padding: 30px 0; opacity: .32; filter: blur(2px); transition: opacity .6s var(--suave), filter .6s var(--suave); }
+  .etapa.ativa { opacity: 1; filter: none; }
+  .etapa:first-child { min-height: 52vh; }
+  .etapa .num { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--marca2); margin-bottom: 14px; }
+  .etapa .num b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; letter-spacing: 0; font-size: 13px; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); box-shadow: 0 8px 20px -8px var(--marca-brilho); }
+  .etapa h3 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; letter-spacing: -.03em; font-weight: 650; margin-bottom: 12px; }
+  .etapa p { color: var(--texto2); font-size: 16px; max-width: 30em; }
+  .etapa ul { list-style: none; margin-top: 16px; display: grid; gap: 9px; }
+  .etapa li { display: flex; gap: 10px; font-size: 14.5px; color: var(--texto2); }
+  .etapa li::before { content: ''; width: 6px; height: 6px; margin-top: 9px; border-radius: 50%; background: var(--marca2); box-shadow: 0 0 10px var(--marca); flex: none; }
+  .etapa li b { color: var(--texto); font-weight: 650; }
+  .etapa .tela-cel-mini { display: none; }
+  .palco-telas { position: sticky; top: 96px; }
+  .janela {
+    position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--linha2); background: #050607;
+    box-shadow: 0 50px 100px -40px rgba(0,0,0,.95), 0 0 100px -30px rgba(61,139,255,.4);
+  }
+  .janela .barra { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; background: #0c0e12; border-bottom: 1px solid var(--linha); }
+  .janela .barra i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.13); display: block; }
+  .janela .barra span { margin-left: 8px; font-size: 12px; color: var(--texto3); }
+  .janela .vista { position: relative; aspect-ratio: 1280 / 820; overflow: hidden; }
+  .janela .vista img { position: absolute; inset: 0; width: 100%; height: auto; opacity: 0; filter: blur(14px); transform: scale(1.03); transition: opacity .7s var(--suave), filter .7s var(--suave), transform .9s var(--suave); }
+  .janela .vista img.on { opacity: 1; filter: none; transform: none; }
+  .palco-telas .rotulo-tela { margin-top: 14px; font-size: 12.5px; color: var(--texto3); text-align: center; }
+  @media (max-width: 900px) {
+    .historia { grid-template-columns: 1fr; gap: 0; }
+    .palco-telas { display: none; }
+    .etapa, .etapa:first-child { min-height: 0; opacity: 1; filter: none; padding: 26px 0 34px; }
+    .etapa .tela-cel-mini { display: block; margin-top: 22px; border-radius: 14px; overflow: hidden; border: 1px solid var(--linha2); box-shadow: 0 30px 60px -30px rgba(0,0,0,.9); }
+    .etapa .tela-cel-mini img { display: block; width: 100%; height: auto; }
+  }
+
+  /* ---------------------------------------------------------- instagram + apoio */
+  .dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .dupla { grid-template-columns: 1fr; } }
+  .painel { position: relative; overflow: hidden; padding: 34px 32px; border-radius: 24px; border: 1px solid var(--linha2); background: var(--vidro); display: flex; flex-direction: column; }
+  .painel h3 { font-size: 24px; font-weight: 650; letter-spacing: -.02em; margin: 8px 0 8px; }
+  .painel p { color: var(--texto2); font-size: 15px; margin-bottom: 24px; flex: 1; }
+  .painel .botoes-painel { display: flex; gap: 10px; flex-wrap: wrap; }
+  .painel.insta { background: radial-gradient(ellipse 70% 100% at 0% 0%, rgba(238,42,123,.13), transparent 70%), var(--vidro); }
+  .painel.insta .rot { color: #f58ab5; }
+  .painel.apoio { background: radial-gradient(ellipse 70% 100% at 100% 0%, rgba(61,139,255,.18), transparent 70%), var(--vidro); border-color: rgba(61,139,255,.3); }
+  .painel .topo-painel { display: flex; align-items: center; gap: 14px; }
+  .painel .avatar { width: 56px; height: 56px; border-radius: 17px; display: grid; place-items: center; font-size: 20px; font-weight: 800; letter-spacing: -.04em;
+    background: linear-gradient(135deg, var(--marca2), var(--marca)); color: var(--sobre-marca); box-shadow: 0 0 34px -8px var(--marca-brilho); flex: none; }
+  .painel .avatar.coracao { background: rgba(61,139,255,.12); border: 1px solid rgba(127,178,255,.3); color: #ff6f91; font-size: 26px; box-shadow: none; }
+  .btn.apoiar { background: linear-gradient(180deg, #e3eeff, #a9cbff); color: var(--sobre-marca); border-color: rgba(255,255,255,.35); font-weight: 750; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 14px 34px -14px rgba(127,178,255,.7); }
+  .btn.apoiar:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .btn .coracao-i { color: #ff5c86; }
+  .modal .grande-estrela.azul { color: #ff6f91; background: var(--marca-fundo); border-color: rgba(127,178,255,.3); }
+  .modal.apoio-modal { background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(61,139,255,.18), transparent 70%), var(--superficie); }
+  .pix { margin: 0 0 14px; padding: 14px 16px; border-radius: 14px; border: 1px dashed rgba(127,178,255,.4); background: var(--marca-fundo2); text-align: left; }
+  .pix small { display: block; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--marca2); font-weight: 700; margin-bottom: 4px; }
+  .pix code { display: block; font: 650 15px/1.4 'Manrope', monospace; color: var(--texto); word-break: break-all; }
+  [hidden] { display: none !important; }
+  .modal .btn { white-space: normal; text-align: center; }
+  .modal-fundo { overflow-y: auto; place-items: start center; }
+  .modal { position: relative; margin: auto 0; }
+  .modal.escolha { max-width: 640px; text-align: left; margin: auto; background: radial-gradient(ellipse 90% 50% at 50% 0%, rgba(61,139,255,.16), transparent 70%), var(--superficie); }
+  .modal.escolha > h3, .modal.escolha > p { text-align: center; }
+  .fechar-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linha); background: transparent; color: var(--texto3); font-size: 18px; cursor: pointer; }
+  .fechar-x:hover { color: var(--texto); border-color: var(--linha2); }
+  .opcao { padding: 20px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); display: grid; gap: 14px; }
+  .opcao + .opcao { margin-top: 12px; }
+  .opcao.recomendada { border-color: rgba(61,139,255,.4); background: var(--marca-fundo2); }
+  .opcao-topo { display: flex; gap: 14px; align-items: center; }
+  .opcao-topo b { display: block; font-size: 16.5px; font-weight: 700; }
+  .opcao-topo div > span { display: block; font-size: 13px; color: var(--texto3); }
+  .opcao-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; font-size: 19px; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); }
+  .opcao-ic.github { background: rgba(255,255,255,.08); color: var(--texto); border: 1px solid var(--linha2); }
+  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 14px; color: var(--texto2); }
+  .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--estrela); font-size: 14px; margin-bottom: 6px; }
+  .seguranca p { margin: 0 0 8px; font-size: 14px; color: var(--texto2); }
+  .seguranca ol { padding-left: 20px; display: grid; gap: 4px; }
+  .seguranca b, .opcao-texto b { color: var(--texto); }
+  .opcao-texto { margin: 0 !important; font-size: 14px !important; color: var(--texto2); }
+  .botoes-opcao { display: flex; flex-wrap: wrap; gap: 8px; }
+  .botoes-opcao .btn { padding: 9px 15px; font-size: 14px; }
+  @media (max-width: 480px) { .botoes-opcao .btn { flex: 1 1 100%; } .opcao { padding: 16px; } }
+  @media (max-width: 480px) {
+    .logo .nome { display: none; }
+    .modal { padding: 26px 20px 20px; }
+    .modal .btn.grande { padding: 13px 18px; font-size: 15.5px; }
+  }
+
+  /* ---------------------------------------------------------- aparecer ao rolar: desfocado -> nitido */
+  .surge {
+    opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985);
+    transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave);
+    transition-delay: calc(var(--d, 0) * 1ms);
+    will-change: opacity, filter, transform;
+  }
+  .surge.visto { opacity: 1; filter: blur(0); transform: none; }
+  /* abertura: cada pedaco entra desfocado, um depois do outro */
+  .entra { animation: entrar 1.2s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
+  @keyframes entrar { from { opacity: 0; filter: blur(18px); transform: translateY(24px); } to { opacity: 1; filter: blur(0); transform: none; } }
+  h1 .palavra { display: inline-block; animation: entrar 1.1s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .ponto, .flutua { animation: none; }
-    .surge { opacity: 1; transform: none; transition: none; }
+    .surge, .entra, h1 .palavra { opacity: 1; filter: none; transform: none; transition: none; animation: none; }
+    .etapa { filter: none; transition: none; }
+    .janela .vista img { filter: none; transform: none; transition: none; }
   }
 </style>
 </head>
@@ -331,21 +430,25 @@
   <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></symbol>
   <symbol id="i-insta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
   <symbol id="i-tesoura" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></symbol>
+  <symbol id="i-coracao" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.5 2.7 4.5 6.5 4.5c2.2 0 3.6 1.3 5.5 3.4 1.9-2.1 3.3-3.4 5.5-3.4 3.8 0 5.6 4 4.1 7.3C19.5 16.4 12 21 12 21Z"/></symbol>
+  <symbol id="i-disco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/><path d="M6 16h.01M10 16h.01"/></symbol>
 </svg>
 
 <header class="topo">
   <div class="largura">
     <a class="logo" href="#"><img src="icone.png" alt=""><span class="nome">Cortador Automático<span class="por">por Gabriel Workspace</span></span></a>
     <nav class="menu">
+      <a href="#como">Como funciona</a>
       <a href="#cortes">Cortes reais</a>
       <a href="#recursos">Recursos</a>
-      <a href="#como">Como funciona</a>
+      <a href="#apoiar">Apoiar</a>
       <a href="#duvidas">Dúvidas</a>
     </nav>
     <div class="acoes-topo">
       <a class="btn p estrelas-topo" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener" aria-label="Dar uma estrela no GitHub">
         <svg class="i estrela"><use href="#i-estrela"/></svg> Estrela <span class="conta" data-estrelas hidden></span>
       </a>
+      <button class="btn p abrir-apoio" type="button"><svg class="i coracao-i"><use href="#i-coracao"/></svg> <span class="so-largo">Apoiar</span></button>
       <a class="btn principal p baixar" href="#"><svg class="i"><use href="#i-baixar"/></svg> Baixar grátis</a>
     </div>
   </div>
@@ -355,18 +458,18 @@
   <div class="hero">
     <div class="largura">
       <div>
-        <span class="selo"><span class="ponto"></span> Novo: clipa enquanto a live acontece · by Gabriel Workspace</span>
-        <h1>Sua live vira <em>corte em pé</em> sozinha.</h1>
-        <p class="sub">Cole o link da Twitch, da Kick ou do YouTube. O Cortador Automático acha os melhores momentos, enquadra rosto e jogo em 9:16 e entrega os clipes prontos pro TikTok, Reels e Shorts. Grátis, no seu PC.</p>
-        <div class="acoes">
+        <span class="selo entra" style="--d:0"><span class="ponto"></span> Novo: clipa enquanto a live acontece · by Gabriel Workspace</span>
+        <h1 id="titulo">Sua live vira <em>corte em pé</em> sozinha.</h1>
+        <p class="sub entra" style="--d:650">Cole o link da Twitch, da Kick ou do YouTube. O Cortador Automático acha os melhores momentos, enquadra rosto e jogo em 9:16 e entrega os clipes prontos pro TikTok, Reels e Shorts. Grátis, no seu PC.</p>
+        <div class="acoes entra" style="--d:800">
           <a class="btn principal grande baixar" href="#"><svg class="i"><use href="#i-baixar"/></svg> Baixar para Windows</a>
-          <a class="btn grande" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="i"><use href="#i-github"/></svg> Ver no GitHub</a>
+          <a class="btn grande" href="#como"><svg class="i"><use href="#i-tesoura"/></svg> Ver como funciona</a>
         </div>
-        <div class="miudo">Windows 10 e 11 (64 bits) · instalador completo, sem precisar instalar mais nada · <span data-versao>versão mais nova</span></div>
-        <div class="plataformas"><span>Twitch</span><span>Kick</span><span>YouTube</span><span>Arquivo do PC</span></div>
+        <div class="miudo entra" style="--d:950">Windows 10 e 11 (64 bits) · instalador completo, sem precisar instalar mais nada · <span data-versao>versão mais nova</span></div>
+        <div class="plataformas entra" style="--d:1050"><span>Twitch</span><span>Kick</span><span>YouTube</span><span>Arquivo do PC</span></div>
       </div>
 
-      <div class="palco">
+      <div class="palco entra" style="--d:400">
         <div class="celular">
           <div class="tela-cel">
             <video src="cortes/cidade.mp4" poster="cortes/cidade.jpg" autoplay muted loop playsinline preload="auto" aria-label="Corte real feito pelo Cortador Automático"></video>
@@ -381,14 +484,83 @@
     </div>
   </div>
 
-  <div class="numeros surge">
-    <div class="largura">
+  <div class="numeros">
+    <div class="largura" data-escalonar>
       <div><b>~15 s</b><span>do lance ao clipe pronto, ao vivo</span></div>
       <div><b>9:16</b><span>rosto + jogo, tela cheia ou área</span></div>
       <div><b>3</b><span>plataformas: Twitch, Kick, YouTube</span></div>
       <div><b>R$ 0</b><span>sem conta, sem assinatura, sem API</span></div>
     </div>
   </div>
+
+  <section id="como">
+    <div class="largura">
+      <div class="titulo centro surge">
+        <span class="rot">Como funciona</span>
+        <h2>Veja o programa por dentro, passo a passo.</h2>
+        <p>Essas são as telas de verdade do Cortador Automático. Role a página pra seguir o caminho, do link até o corte pronto pra postar.</p>
+      </div>
+      <div class="historia">
+        <div class="etapas">
+          <div class="etapa ativa" data-tela="inicio">
+            <span class="num"><b>1</b> Cole o link</span>
+            <h3>Um campo só. Cole e escolha o modo.</h3>
+            <p>Cole o link da Twitch, da Kick ou do YouTube, ou escolha um vídeo do seu PC. Depois diga o que é:</p>
+            <ul>
+              <li><span><b>Vídeo gravado:</b> live que já acabou, VOD ou vídeo do YouTube. Ele acha os cortes sozinho.</span></li>
+              <li><span><b>Ao vivo agora:</b> a live está rolando e você quer clipar na hora.</span></li>
+            </ul>
+            <div class="tela-cel-mini"><img src="telas/inicio.jpg" alt="Tela inicial do Cortador Automático com o campo do link" loading="lazy"></div>
+          </div>
+          <div class="etapa" data-tela="aovivo">
+            <span class="num"><b>2</b> Ao vivo</span>
+            <h3>Viu o lance? Aperte CLIPAR.</h3>
+            <p>Antes de começar, você marca onde fica a webcam e o jogo e escolhe um texto fixo pra tela. Aí o programa grava a live por trás, enquanto você assiste.</p>
+            <ul>
+              <li><span>Aperte <b>CLIPAR</b> (ou a tecla <b>C</b>) e os últimos segundos viram um clipe em pé em uns 15 segundos.</span></li>
+              <li><span>Ou deixe no <b>automático</b>: quando o chat explode ou o streamer grita, ele corta sozinho.</span></li>
+              <li><span>O anúncio da Twitch é jogado fora. Nenhum clipe sai com a tela de comercial.</span></li>
+            </ul>
+            <div class="tela-cel-mini"><img src="telas/aovivo.jpg" alt="Painel ao vivo com o botão CLIPAR AGORA e os clipes prontos" loading="lazy"></div>
+          </div>
+          <div class="etapa" data-tela="projeto">
+            <span class="num"><b>3</b> Vídeo gravado</span>
+            <h3>Ele assiste tudo e separa os melhores momentos.</h3>
+            <p>Numa live que já acabou, o programa ouve o vídeo inteiro, escolhe os trechos com mais chance de viralizar e dá uma nota pra cada um.</p>
+            <ul>
+              <li><span>Cada corte sai em <b>9:16</b>, com rosto em cima e jogo embaixo, tela cheia ou só uma área.</span></li>
+              <li><span>Vem com <b>título e hashtags</b> sugeridos a partir da própria fala.</span></li>
+              <li><span>Quer mais? Dá pra tirar mais cortes do mesmo vídeo.</span></li>
+            </ul>
+            <div class="tela-cel-mini"><img src="telas/projeto.jpg" alt="Lista de cortes prontos com botões de baixar e copiar a legenda" loading="lazy"></div>
+          </div>
+          <div class="etapa" data-tela="editor">
+            <span class="num"><b>4</b> Ajuste e poste</span>
+            <h3>Não ficou perfeito? Corrija em segundos.</h3>
+            <p>Abra qualquer corte no editor, inclusive os da live, e deixe do seu jeito antes de postar.</p>
+            <ul>
+              <li><span>Volte e avance o <b>começo e o fim</b> na linha do tempo.</span></li>
+              <li><span>Mude o <b>texto da tela</b> e corrija a <b>legenda palavra por palavra</b>.</span></li>
+              <li><span>Pronto: baixe o clipe, copie a legenda e poste primeiro.</span></li>
+            </ul>
+            <div class="tela-cel-mini"><img src="telas/editor.jpg" alt="Editor do corte com a linha do tempo e a legenda" loading="lazy"></div>
+          </div>
+        </div>
+        <div class="palco-telas">
+          <div class="janela">
+            <div class="barra"><i></i><i></i><i></i><span>Cortador Automático</span></div>
+            <div class="vista">
+              <img class="on" data-tela="inicio" src="telas/inicio.jpg" alt="Tela inicial do Cortador Automático com o campo do link">
+              <img data-tela="aovivo" src="telas/aovivo.jpg" alt="Painel ao vivo com o botão CLIPAR AGORA e os clipes prontos" loading="lazy">
+              <img data-tela="projeto" src="telas/projeto.jpg" alt="Lista de cortes prontos com botões de baixar e copiar a legenda" loading="lazy">
+              <img data-tela="editor" src="telas/editor.jpg" alt="Editor do corte com a linha do tempo e a legenda" loading="lazy">
+            </div>
+          </div>
+          <p class="rotulo-tela">Telas reais do programa. O rosto e o nome dos streamers foram escondidos.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section id="cortes">
     <div class="largura">
@@ -397,7 +569,7 @@
         <h2>Feitos com o Cortador, direto da live.</h2>
         <p>Nada de montagem: são clipes que o programa gerou sozinho de lives de GTA 6, do jeito que saíram.</p>
       </div>
-      <div class="galeria surge">
+      <div class="galeria" data-escalonar>
         <figure>
           <div class="mini"><video data-src="cortes/cidade.mp4" poster="cortes/cidade.jpg" muted loop playsinline preload="none"></video><span class="cam">webcam do streamer</span><span class="tag"><span class="ponto"></span> Ao vivo</span></div>
           <figcaption><b>Rosto + jogo</b><span>clipado na hora do lance</span></figcaption>
@@ -419,7 +591,7 @@
           <figcaption><b>Rosto + jogo</b><span>explorando o mapa</span></figcaption>
         </figure>
       </div>
-      <p class="aviso-galeria">Nesta página o rosto dos streamers está borrado e os cortes estão sem som. No programa, o clipe sai com a webcam e o áudio originais.</p>
+      <p class="aviso-galeria surge">Nesta página o rosto dos streamers está borrado e os cortes estão sem som. No programa, o clipe sai com a webcam e o áudio originais.</p>
     </div>
   </section>
 
@@ -430,7 +602,7 @@
         <h2>Tudo que um clipador precisa, num programa só.</h2>
         <p>Rápido pra postar primeiro, completo pra não precisar de mais nada.</p>
       </div>
-      <div class="grade surge">
+      <div class="grade" data-escalonar>
         <div class="cartao destaque">
           <span class="vivo"><span class="ponto"></span> AO VIVO</span>
           <h3>Clipa a live enquanto ela acontece</h3>
@@ -452,14 +624,14 @@
           <p>Texto fixo na tela (em cima, no meio ou embaixo), gancho nos primeiros segundos e legenda palavra por palavra.</p>
         </div>
         <div class="cartao">
-          <div class="ic"><svg class="i"><use href="#i-pular"/></svg></div>
-          <h3>Pula o anúncio da Twitch</h3>
-          <p>O anúncio que a Twitch coloca na transmissão é reconhecido e jogado fora. Nenhum clipe sai com a tela de comercial.</p>
+          <div class="ic"><svg class="i"><use href="#i-tesoura"/></svg></div>
+          <h3>Edita depois de pronto</h3>
+          <p>Volte e avance o começo e o fim, reescreva o texto da tela e corrija a legenda palavra por palavra. Também nos clipes da live.</p>
         </div>
         <div class="cartao">
-          <div class="ic"><svg class="i"><use href="#i-tesoura"/></svg></div>
-          <h3>Ajusta depois de pronto</h3>
-          <p>Não gostou do começo ou do fim? Arraste na linha do tempo, reescreva o gancho e refaça em segundos. Dá pra tirar mais cortes do mesmo vídeo.</p>
+          <div class="ic"><svg class="i"><use href="#i-disco"/></svg></div>
+          <h3>Salva no disco que você quiser</h3>
+          <p>Escolha o disco ou a pasta nos Ajustes, vendo quanto espaço livre tem em cada um. Troca na hora, sem fechar o programa.</p>
         </div>
         <div class="cartao">
           <div class="ic"><svg class="i"><use href="#i-zap"/></svg></div>
@@ -475,13 +647,13 @@
     </div>
   </section>
 
-  <section id="como">
+  <section id="instalar" style="padding-top:20px">
     <div class="largura">
       <div class="titulo surge">
-        <span class="rot">Como funciona</span>
-        <h2>Do link ao corte em três passos.</h2>
+        <span class="rot">Pra começar</span>
+        <h2>Instalou, colou o link, postou.</h2>
       </div>
-      <div class="passos surge">
+      <div class="passos" data-escalonar>
         <div class="passo"><h3>Baixe e instale</h3><p>Um instalador só, com tudo dentro. Clique em "Avançar" e pronto: atalho na área de trabalho, sem instalar Python, ffmpeg nem nada.</p></div>
         <div class="passo"><h3>Cole o link</h3><p>Live acontecendo agora, VOD que já passou ou vídeo do YouTube. O programa descobre sozinho qual é e te leva pro lugar certo.</p></div>
         <div class="passo"><h3>Poste o corte</h3><p>Os clipes saem em 9:16 com título e hashtags sugeridos. É só baixar, copiar a legenda e postar.</p></div>
@@ -494,9 +666,9 @@
       <div class="titulo surge">
         <span class="rot">Requisitos</span>
         <h2>Roda em PC comum.</h2>
-        <p>Não precisa de placa de vídeo. Processador mais fraco funciona, só demora mais pra gerar os cortes.</p>
+        <p>Não precisa de placa de vídeo. PC mais fraco funciona: na primeira vez que abre, o programa olha o seu PC e recomenda o <b>modo leve</b> (usa metade do processador e esquenta menos) ou o <b>processador total</b> (mais rápido).</p>
       </div>
-      <div class="req surge">
+      <div class="req" data-escalonar>
         <div><b>Windows 10 / 11</b><span>64 bits</span></div>
         <div><b>8 GB</b><span>de memória RAM (recomendado)</span></div>
         <div><b>~3 GB</b><span>livres no disco, mais o espaço dos cortes</span></div>
@@ -511,7 +683,7 @@
         <span class="rot">Dúvidas</span>
         <h2>Perguntas frequentes</h2>
       </div>
-      <div class="duvidas surge">
+      <div class="duvidas" data-escalonar>
         <details>
           <summary>É grátis mesmo?</summary>
           <p>É. Sem assinatura, sem limite de cortes e sem chave de API. Tudo roda no seu computador, então não tem custo de servidor pra repassar.</p>
@@ -526,7 +698,19 @@
         </details>
         <details>
           <summary>Onde ficam os meus cortes?</summary>
-          <p>Na pasta <b>Vídeos › Cortador Automatico</b>. Eles também aparecem no botão <b>Projetos</b>, dentro do programa, pra assistir, baixar e editar de novo.</p>
+          <p>Por padrão, na pasta <b>Vídeos › Cortador Automatico</b>. Dá pra trocar o disco ou a pasta em <b>Ajustes › Onde salvar</b>. Os cortes também aparecem no botão <b>Projetos</b>, dentro do programa, pra assistir, baixar e editar de novo.</p>
+        </details>
+        <details>
+          <summary>Dá pra editar um clipe depois de pronto?</summary>
+          <p>Dá, inclusive os clipes da live. No editor você volta e avança o começo e o fim, muda o texto da tela e corrige a legenda palavra por palavra.</p>
+        </details>
+        <details>
+          <summary>Como posso apoiar o projeto?</summary>
+          <p>Clique em <b>Apoiar</b> no topo da página pra fazer uma doação de qualquer valor. Também ajuda muito dar uma estrela no GitHub e seguir o <b>@gabriel.workspace</b> no Instagram.</p>
+        </details>
+        <details>
+          <summary>Meu PC esquenta ou desliga enquanto gera os cortes. E agora?</summary>
+          <p>É o processador trabalhando no máximo. Em <b>Ajustes › Uso do processador</b>, escolha o <b>Modo leve</b>: ele usa metade do processador, com prioridade baixa, e o PC esquenta bem menos. Também ajuda limpar a poeira do cooler e deixar o PC ventilado.</p>
         </details>
         <details>
           <summary>Como funciona o corte automático na live?</summary>
@@ -552,16 +736,34 @@
     </div>
   </section>
 
-  <section style="padding-top:0">
+  <section id="apoiar" style="padding-top:0">
     <div class="largura">
-      <div class="criador surge">
-        <div class="avatar" aria-hidden="true">GW</div>
-        <div>
-          <span class="rot">Quem faz</span>
-          <h3>Feito por Gabriel Workspace</h3>
+      <div class="titulo centro surge">
+        <span class="rot">Quem faz e como ajudar</span>
+        <h2>Feito por uma pessoa. Grátis pra todo mundo.</h2>
+      </div>
+      <div class="dupla" data-escalonar>
+        <div class="painel insta">
+          <div class="topo-painel">
+            <div class="avatar" aria-hidden="true">GW</div>
+            <div><span class="rot">Instagram</span><h3>Gabriel Workspace</h3></div>
+          </div>
           <p>O Cortador Automático é um projeto do Gabriel Workspace, feito pra clipador postar primeiro sem gastar nada. Segue no Instagram pra ver as novidades, os cortes e as próximas ferramentas.</p>
+          <div class="botoes-painel">
+            <a class="btn ig" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> Seguir @gabriel.workspace</a>
+          </div>
         </div>
-        <a class="btn ig grande" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> @gabriel.workspace</a>
+        <div class="painel apoio">
+          <div class="topo-painel">
+            <div class="avatar coracao" aria-hidden="true"><svg class="i"><use href="#i-coracao"/></svg></div>
+            <div><span class="rot">Apoie o projeto</span><h3>Ajude a manter o Cortador vivo</h3></div>
+          </div>
+          <p>O programa é e vai continuar grátis. Se ele te ajudou, qualquer valor ajuda a pagar o tempo de desenvolvimento e a trazer as próximas atualizações. Não pode doar? Uma estrela no GitHub já ajuda muito.</p>
+          <div class="botoes-painel">
+            <button class="btn apoiar abrir-apoio" type="button"><svg class="i coracao-i"><use href="#i-coracao"/></svg> Apoiar com uma doação</button>
+            <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="i estrela"><use href="#i-estrela"/></svg> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -572,7 +774,10 @@
         <img src="icone.png" alt="">
         <h2>Comece a clipar hoje.</h2>
         <p>Baixe, instale e cole o link da primeira live. O primeiro corte sai em minutos.</p>
-        <a class="btn principal grande baixar" href="#"><svg class="i"><use href="#i-baixar"/></svg> Baixar para Windows</a>
+        <div class="acoes" style="justify-content:center">
+          <a class="btn principal grande baixar" href="#"><svg class="i"><use href="#i-baixar"/></svg> Baixar para Windows</a>
+          <button class="btn grande abrir-apoio" type="button"><svg class="i coracao-i"><use href="#i-coracao"/></svg> Apoiar o projeto</button>
+        </div>
         <div class="miudo">Grátis · Windows 10 e 11 (64 bits)</div>
       </div>
     </div>
@@ -583,9 +788,47 @@
   <div class="largura">
     <span>© 2026 <b style="color:var(--texto2)">Gabriel Workspace</b> · Cortador Automático · código aberto (MIT) no <a href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener">GitHub</a> · Instagram <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">@gabriel.workspace</a></span>
     <span>Usa ffmpeg, yt-dlp, Python e faster-whisper, cada um com a sua licença. Fonte Manrope (<a href="OFL-Manrope.txt">OFL</a>).</span>
-    <span>Assinatura de código: o instalador usa a <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. Free code signing provided by <a href="https://signpath.io/" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. · <a href="https://github.com/gabrielworkspace/cortador-automatico#privacidade" target="_blank" rel="noopener">Privacidade</a></span>
+    <span>Assinatura de código: pedido em análise na <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. Free code signing provided by <a href="https://signpath.io/" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. · <a href="https://github.com/gabrielworkspace/cortador-automatico#privacidade" target="_blank" rel="noopener">Privacidade</a></span>
   </div>
 </footer>
+
+<div class="modal-fundo" id="escolher" role="dialog" aria-modal="true" aria-labelledby="escolherTitulo">
+  <div class="modal escolha">
+    <button class="fechar-x" type="button" data-fechar aria-label="Fechar">×</button>
+    <h3 id="escolherTitulo">Como você quer baixar?</h3>
+    <p>As duas opções são grátis e instalam o mesmo programa.</p>
+
+    <div class="opcao recomendada">
+      <div class="opcao-topo">
+        <span class="opcao-ic"><svg class="i"><use href="#i-baixar"/></svg></span>
+        <div><b>Instalador para Windows (.exe)</b><span>Recomendado · tudo dentro, é só clicar em Avançar · ~770 MB</span></div>
+      </div>
+      <div class="seguranca">
+        <b><svg class="i"><use href="#i-escudo"/></svg> Sobre o aviso do Windows</b>
+        <p>O Cortador Automático ainda <b>não tem certificado de assinatura digital</b>. O pedido já foi feito pra SignPath Foundation, que dá esse certificado de graça pra projetos de código aberto, e está em análise. Enquanto ele não sai, o Windows mostra <b>"O Windows protegeu o computador"</b> pra qualquer programa novo sem certificado. Isso não quer dizer que é vírus.</p>
+        <ol>
+          <li>Abra o instalador e clique em <b>Mais informações</b>.</li>
+          <li>Clique em <b>Executar assim mesmo</b>.</li>
+          <li>Se o antivírus reclamar, libere a pasta do Cortador Automático. O código é aberto: dá pra conferir tudo no GitHub.</li>
+        </ol>
+      </div>
+      <a class="btn principal grande" id="btnBaixarExe" href="#"><svg class="i"><use href="#i-baixar"/></svg> Entendi, baixar o instalador</a>
+    </div>
+
+    <div class="opcao">
+      <div class="opcao-topo">
+        <span class="opcao-ic github"><svg class="i"><use href="#i-github"/></svg></span>
+        <div><b>Pelo GitHub</b><span>Pra quem prefere ver de onde vem cada arquivo</span></div>
+      </div>
+      <p class="opcao-texto">Baixe o instalador direto da página de versões do GitHub, onde fica o histórico de cada versão. Ou baixe o código e rode o <b>instalar.bat</b>: ele instala Node, Python e ffmpeg pelo winget, e depois é só abrir o <b>iniciar.bat</b>.</p>
+      <div class="botoes-opcao">
+        <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico/releases/latest" target="_blank" rel="noopener"><svg class="i"><use href="#i-github"/></svg> Página de versões</a>
+        <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico/archive/refs/heads/main.zip"><svg class="i"><use href="#i-baixar"/></svg> Baixar o código (.zip)</a>
+        <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="i estrela"><use href="#i-estrela"/></svg> Ver o repositório</a>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal-fundo" id="obrigado" role="dialog" aria-modal="true" aria-labelledby="obrigadoTitulo">
   <div class="modal">
@@ -595,9 +838,26 @@
     <div class="botoes">
       <a class="btn estrelar grande" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener" id="btnEstrelar"><svg class="i"><use href="#i-estrela"/></svg> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
       <a class="btn ig" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> Seguir @gabriel.workspace</a>
-      <button class="btn" type="button" id="btnFecharObrigado">Agora não</button>
+      <button class="btn abrir-apoio" type="button"><svg class="i coracao-i"><use href="#i-coracao"/></svg> Apoiar com uma doação</button>
+      <button class="btn" type="button" data-fechar>Agora não</button>
     </div>
     <div class="dica"><b>Ao abrir o instalador:</b> se o Windows mostrar "O Windows protegeu o computador", clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</div>
+  </div>
+</div>
+
+<div class="modal-fundo" id="apoio" role="dialog" aria-modal="true" aria-labelledby="apoioTitulo">
+  <div class="modal apoio-modal">
+    <div class="grande-estrela azul"><svg class="i"><use href="#i-coracao"/></svg></div>
+    <h3 id="apoioTitulo">Apoie o Cortador Automático</h3>
+    <p>Obrigado por querer ajudar! Qualquer valor faz diferença e mantém o programa grátis pra todo mundo.</p>
+    <div class="pix" id="apoioPix" hidden><small>Chave Pix</small><code id="apoioPixChave"></code></div>
+    <div class="botoes">
+      <button class="btn apoiar grande" type="button" id="btnCopiarPix" hidden><svg class="i coracao-i"><use href="#i-coracao"/></svg> Copiar a chave Pix</button>
+      <a class="btn apoiar grande" id="btnApoioLink" href="#" target="_blank" rel="noopener" hidden><svg class="i coracao-i"><use href="#i-coracao"/></svg> Doar pelo site</a>
+      <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="i estrela"><use href="#i-estrela"/></svg> Dar uma estrela no GitHub</a>
+      <a class="btn ig" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> Seguir @gabriel.workspace</a>
+      <button class="btn" type="button" data-fechar>Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -606,19 +866,40 @@
   var REPO = 'gabrielworkspace/cortador-automatico';
   // Todos os botoes "Baixar" apontam pro instalador da versao mais nova no GitHub
   var DOWNLOAD = 'https://github.com/' + REPO + '/releases/latest/download/Instalar-Cortador-Automatico.exe';
-  var fundo = document.getElementById('obrigado');
+  // Pra onde vai a doacao. Preencha um dos dois (ou os dois):
+  //   pix:  a chave Pix (de preferencia a chave aleatoria)
+  //   link: uma pagina de doacao (LivePix, Ko-fi, Buy Me a Coffee...)
+  var DOACAO = { pix: '', link: '' };
+  var $ = function (id) { return document.getElementById(id); };
 
-  function abrir() { fundo.classList.add('on'); document.getElementById('btnEstrelar').focus(); }
-  function fechar() { fundo.classList.remove('on'); }
+  function abrir(id) {
+    document.querySelectorAll('.modal-fundo.on').forEach(function (m) { m.classList.remove('on'); });
+    $(id).classList.add('on');
+  }
+  function fechar() { document.querySelectorAll('.modal-fundo.on').forEach(function (m) { m.classList.remove('on'); }); }
+  // Botao "Baixar": primeiro a pessoa escolhe como quer baixar (instalador ou GitHub)
   document.querySelectorAll('.baixar').forEach(function (a) {
-    a.href = DOWNLOAD;
-    // o download segue normal; a janela de obrigado aparece por cima
-    a.addEventListener('click', function () { setTimeout(abrir, 350); });
+    a.href = DOWNLOAD; // sem JavaScript, continua baixando direto
+    a.addEventListener('click', function (e) { e.preventDefault(); abrir('escolher'); });
   });
-  document.getElementById('btnFecharObrigado').addEventListener('click', fechar);
-  document.getElementById('btnEstrelar').addEventListener('click', function () { setTimeout(fechar, 600); });
-  fundo.addEventListener('click', function (e) { if (e.target === fundo) fechar(); });
+  // escolheu o instalador: o download segue normal e a janela de obrigado aparece por cima
+  $('btnBaixarExe').href = DOWNLOAD;
+  $('btnBaixarExe').addEventListener('click', function () { setTimeout(function () { abrir('obrigado'); $('btnEstrelar').focus(); }, 350); });
+  document.querySelectorAll('.abrir-apoio').forEach(function (b) { b.addEventListener('click', function () { abrir('apoio'); }); });
+  $('btnEstrelar').addEventListener('click', function () { setTimeout(fechar, 600); });
+  document.querySelectorAll('.modal-fundo').forEach(function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-fechar]')) fechar(); });
+  });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fechar(); });
+
+  // apoio: mostra o Pix e/ou o link que estiverem preenchidos
+  if (DOACAO.pix) { $('apoioPix').hidden = false; $('apoioPixChave').textContent = DOACAO.pix; $('btnCopiarPix').hidden = false; }
+  if (DOACAO.link) { $('btnApoioLink').hidden = false; $('btnApoioLink').href = DOACAO.link; }
+  $('btnCopiarPix').addEventListener('click', function () {
+    var b = this, antes = b.innerHTML;
+    var feito = function () { b.textContent = 'Chave copiada! Obrigado ❤'; setTimeout(function () { b.innerHTML = antes; }, 2200); };
+    if (navigator.clipboard) navigator.clipboard.writeText(DOACAO.pix).then(feito, feito); else feito();
+  });
 
   // Quantas estrelas o projeto tem e qual e a versao mais nova (API publica do GitHub)
   fetch('https://api.github.com/repos/' + REPO).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -630,6 +911,52 @@
   }).catch(function () {});
 
   var semMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Titulo da abertura: cada palavra entra desfocada, uma depois da outra
+  var h1 = $('titulo');
+  if (h1 && !semMovimento) {
+    var n = 0;
+    var quebrar = function (no) {
+      Array.prototype.slice.call(no.childNodes).forEach(function (filho) {
+        if (filho.nodeType === 3) {
+          var frag = document.createDocumentFragment();
+          filho.textContent.split(/(\s+)/).forEach(function (parte) {
+            if (!parte) return;
+            if (/^\s+$/.test(parte)) { frag.appendChild(document.createTextNode(parte)); return; }
+            var s = document.createElement('span');
+            s.className = 'palavra'; s.style.setProperty('--d', String(120 + n++ * 90)); s.textContent = parte;
+            frag.appendChild(s);
+          });
+          filho.parentNode.replaceChild(frag, filho);
+        } else if (filho.nodeType === 1) {
+          // o "corte em pe" colorido entra junto, como um bloco so
+          filho.classList.add('palavra'); filho.style.setProperty('--d', String(120 + n++ * 90)); n++;
+        }
+      });
+    };
+    quebrar(h1);
+  }
+
+  // Grupos (cartoes, cortes, perguntas): cada item aparece um pouquinho depois do outro
+  document.querySelectorAll('[data-escalonar]').forEach(function (grupo) {
+    Array.prototype.forEach.call(grupo.children, function (filho, i) {
+      filho.classList.add('surge'); filho.style.setProperty('--d', String(Math.min(i, 8) * 110));
+    });
+  });
+
+  // Como funciona: conforme rola, a tela do programa troca pra etapa que esta no meio
+  var etapas = document.querySelectorAll('.etapa');
+  var telas = document.querySelectorAll('.janela .vista img');
+  function ativar(nome) {
+    etapas.forEach(function (e) { e.classList.toggle('ativa', e.dataset.tela === nome); });
+    telas.forEach(function (im) { im.classList.toggle('on', im.dataset.tela === nome); });
+  }
+  if ('IntersectionObserver' in window && etapas.length) {
+    var obsEtapa = new IntersectionObserver(function (itens) {
+      itens.forEach(function (it) { if (it.isIntersecting) ativar(it.target.dataset.tela); });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    etapas.forEach(function (e) { obsEtapa.observe(e); });
+  }
 
   // Os cortes da galeria so carregam e tocam quando aparecem na tela
   var videos = document.querySelectorAll('.galeria video');
@@ -647,7 +974,7 @@
 
     var obsSurge = new IntersectionObserver(function (itens) {
       itens.forEach(function (it) { if (it.isIntersecting) { it.target.classList.add('visto'); obsSurge.unobserve(it.target); } });
-    }, { threshold: 0.12 });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
     document.querySelectorAll('.surge').forEach(function (el) { obsSurge.observe(el); });
   } else {
     videos.forEach(function (v) { v.src = v.dataset.src; });

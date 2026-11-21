@@ -119,4 +119,4 @@ function livreAtual() {
   } catch (_) { return null; }
 }
 
-module.exports = { dados, saida, trabalho, baixados, aoVivo, mudar, discos, livreAtual, padrao, arquivoConfig, RAIZ };
+module.exports = { lerConfig, gravarConfig, dados, saida, trabalho, baixados, aoVivo, mudar, discos, livreAtual, padrao, arquivoConfig, RAIZ };

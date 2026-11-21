@@ -3,7 +3,8 @@
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
 #define Nome "Cortador Automático"
-#define Versao "2.0.0"
+#define Versao "2.0.2"
+#define Marca "Gabriel Workspace"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM
   #define MONTAGEM "montagem"
@@ -17,8 +18,13 @@ AppId={{6E0B7A52-93D4-4C1F-8B2E-5A7C1D9F3E64}
 AppName={#Nome}
 AppVersion={#Versao}
 AppVerName={#Nome}
-AppPublisher={#Nome}
-VersionInfoDescription=Instalador do {#Nome}
+AppPublisher={#Marca}
+AppPublisherURL=https://www.instagram.com/gabriel.workspace/
+AppSupportURL=https://gabrielworkspace.github.io/cortador-automatico/
+AppUpdatesURL=https://gabrielworkspace.github.io/cortador-automatico/
+AppCopyright=© 2026 {#Marca}
+VersionInfoCompany={#Marca}
+VersionInfoDescription=Instalador do {#Nome} - {#Marca}
 VersionInfoProductName={#Nome}
 VersionInfoVersion={#Versao}
 ; Instala só pra quem está usando o PC: não pede senha de administrador.
@@ -52,7 +58,7 @@ LZMANumBlockThreads=2
 Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
-WelcomeLabel2=Isso vai instalar o [name] no seu computador.%n%nEle transforma vídeos e lives da Twitch, Kick e YouTube em cortes verticais prontos pro TikTok, Reels e Shorts - de vídeo gravado ou ao vivo, enquanto a live acontece.%n%nTudo roda no seu PC, de graça. Os cortes ficam na pasta Vídeos > Cortador Automatico.
+WelcomeLabel2=Isso vai instalar o [name], do Gabriel Workspace, no seu computador.%n%nEle transforma vídeos e lives da Twitch, Kick e YouTube em cortes verticais prontos pro TikTok, Reels e Shorts - de vídeo gravado ou ao vivo, enquanto a live acontece.%n%nTudo roda no seu PC, de graça. Os cortes ficam na pasta Vídeos > Cortador Automatico.%n%nInstagram: @gabriel.workspace
 FinishedLabel=Pronto! O [name] está instalado.%n%nÉ só abrir pelo atalho na área de trabalho ou no menu Iniciar.
 
 [Tasks]

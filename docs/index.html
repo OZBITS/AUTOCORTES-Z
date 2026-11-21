@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cortador Automático</title>
+<title>Cortador Automático · Gabriel Workspace</title>
 <meta name="description" content="Transforma lives e vídeos da Twitch, Kick e YouTube em cortes verticais prontos pro TikTok, Reels e Shorts. Gravado ou ao vivo. Grátis, no seu PC.">
 <meta property="og:title" content="Cortador Automático">
 <meta property="og:description" content="Lives e vídeos viram cortes em pé, sozinhos. Grátis, no seu PC.">
 <meta property="og:image" content="https://gabrielworkspace.github.io/cortador-automatico/icone.png">
 <meta name="theme-color" content="#050607">
+<meta name="author" content="Gabriel Workspace">
 <link rel="icon" type="image/png" href="icone.png">
 <style>
   @font-face {
@@ -266,6 +267,21 @@
   .final img { width: 80px; height: 80px; border-radius: 22px; box-shadow: 0 0 44px -6px var(--marca-brilho); margin-bottom: 22px; }
   .final p { color: var(--texto2); margin: 10px auto 30px; max-width: 32em; }
 
+  .logo .por { display: block; font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--texto3); margin-top: 1px; }
+  .logo .nome { display: flex; flex-direction: column; line-height: 1.15; }
+  .btn.ig { background: linear-gradient(135deg, #f9ce34, #ee2a7b 45%, #6228d7); color: #fff; border-color: rgba(255,255,255,.2); font-weight: 750; box-shadow: 0 14px 34px -14px rgba(238,42,123,.6); }
+  .btn.ig:hover { filter: brightness(1.07); transform: translateY(-1px); }
+  .criador {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 26px; align-items: center;
+    padding: 30px 32px; border-radius: 24px; border: 1px solid var(--linha2);
+    background: radial-gradient(ellipse 60% 120% at 0% 50%, rgba(238,42,123,.1), transparent 70%), var(--vidro);
+  }
+  .criador .avatar { width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center; font-size: 26px; font-weight: 800; letter-spacing: -.04em;
+    background: linear-gradient(135deg, var(--marca2), var(--marca)); color: var(--sobre-marca); box-shadow: 0 0 40px -8px var(--marca-brilho); }
+  .criador .rot { color: #f58ab5; }
+  .criador h3 { font-size: 24px; font-weight: 650; letter-spacing: -.02em; margin: 4px 0 6px; }
+  .criador p { color: var(--texto2); font-size: 15px; max-width: 40em; }
+  @media (max-width: 760px) { .criador { grid-template-columns: 1fr; text-align: center; justify-items: center; } }
   footer { padding: 40px 0 56px; color: var(--texto3); font-size: 13.5px; border-top: 1px solid var(--linha); margin-top: 40px; }
   footer .largura { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
   footer a { color: var(--texto2); }
@@ -313,12 +329,13 @@
   <symbol id="i-escudo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></symbol>
   <symbol id="i-pular" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 4 10 8-10 8V4Z"/><path d="M19 5v14"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
   <symbol id="i-tesoura" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></symbol>
 </svg>
 
 <header class="topo">
   <div class="largura">
-    <a class="logo" href="#"><img src="icone.png" alt=""><span>Cortador Automático</span></a>
+    <a class="logo" href="#"><img src="icone.png" alt=""><span class="nome">Cortador Automático<span class="por">por Gabriel Workspace</span></span></a>
     <nav class="menu">
       <a href="#cortes">Cortes reais</a>
       <a href="#recursos">Recursos</a>
@@ -338,7 +355,7 @@
   <div class="hero">
     <div class="largura">
       <div>
-        <span class="selo"><span class="ponto"></span> Novo: clipa enquanto a live acontece</span>
+        <span class="selo"><span class="ponto"></span> Novo: clipa enquanto a live acontece · by Gabriel Workspace</span>
         <h1>Sua live vira <em>corte em pé</em> sozinha.</h1>
         <p class="sub">Cole o link da Twitch, da Kick ou do YouTube. O Cortador Automático acha os melhores momentos, enquadra rosto e jogo em 9:16 e entrega os clipes prontos pro TikTok, Reels e Shorts. Grátis, no seu PC.</p>
         <div class="acoes">
@@ -537,6 +554,20 @@
 
   <section style="padding-top:0">
     <div class="largura">
+      <div class="criador surge">
+        <div class="avatar" aria-hidden="true">GW</div>
+        <div>
+          <span class="rot">Quem faz</span>
+          <h3>Feito por Gabriel Workspace</h3>
+          <p>O Cortador Automático é um projeto do Gabriel Workspace, feito pra clipador postar primeiro sem gastar nada. Segue no Instagram pra ver as novidades, os cortes e as próximas ferramentas.</p>
+        </div>
+        <a class="btn ig grande" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> @gabriel.workspace</a>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="largura">
       <div class="final surge">
         <img src="icone.png" alt="">
         <h2>Comece a clipar hoje.</h2>
@@ -550,7 +581,7 @@
 
 <footer>
   <div class="largura">
-    <span>Cortador Automático · código aberto (MIT) no <a href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener">GitHub</a></span>
+    <span>© 2026 <b style="color:var(--texto2)">Gabriel Workspace</b> · Cortador Automático · código aberto (MIT) no <a href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener">GitHub</a> · Instagram <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">@gabriel.workspace</a></span>
     <span>Usa ffmpeg, yt-dlp, Python e faster-whisper, cada um com a sua licença. Fonte Manrope (<a href="OFL-Manrope.txt">OFL</a>).</span>
   </div>
 </footer>
@@ -562,6 +593,7 @@
     <p>Enquanto baixa, ajuda o projeto: dá uma <b>estrela no GitHub</b>. É grátis, leva 2 segundos e faz o Cortador ser encontrado por mais clipadores.</p>
     <div class="botoes">
       <a class="btn estrelar grande" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener" id="btnEstrelar"><svg class="i"><use href="#i-estrela"/></svg> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
+      <a class="btn ig" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><svg class="i"><use href="#i-insta"/></svg> Seguir @gabriel.workspace</a>
       <button class="btn" type="button" id="btnFecharObrigado">Agora não</button>
     </div>
     <div class="dica"><b>Ao abrir o instalador:</b> se o Windows mostrar "O Windows protegeu o computador", clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</div>

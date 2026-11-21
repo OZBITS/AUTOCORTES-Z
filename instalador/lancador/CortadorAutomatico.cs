@@ -22,9 +22,11 @@ using Microsoft.Win32;
 
 [assembly: System.Reflection.AssemblyTitle("Cortador Automático")]
 [assembly: System.Reflection.AssemblyProduct("Cortador Automático")]
-[assembly: System.Reflection.AssemblyDescription("Cortador Automático")]
-[assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.0.0.0")]
+[assembly: System.Reflection.AssemblyDescription("Cortador Automático - Gabriel Workspace")]
+[assembly: System.Reflection.AssemblyCompany("Gabriel Workspace")]
+[assembly: System.Reflection.AssemblyCopyright("© 2026 Gabriel Workspace")]
+[assembly: System.Reflection.AssemblyVersion("2.0.2.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.0.2.0")]
 
 static class Programa
 {

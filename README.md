@@ -1,5 +1,8 @@
 # Cortador Automático
 
+**por Gabriel Workspace** · Instagram [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/) ·
+[Baixar o instalador](https://gabrielworkspace.github.io/cortador-automatico/)
+
 Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (9:16)
 prontos para TikTok, Reels e Shorts — tanto **live que já acabou (VOD)** quanto
 **live acontecendo agora**.
@@ -79,7 +82,7 @@ usa.
 
 ## Política de assinatura de código
 
-- Autor e aprovador das versões: [gabrielworkspace](https://github.com/gabrielworkspace)
+- Autor e aprovador das versões: Gabriel Workspace ([gabrielworkspace](https://github.com/gabrielworkspace) no GitHub, [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/) no Instagram)
 - Os instaladores publicados são montados só pelo GitHub Actions deste
   repositório, a partir do código público.
 

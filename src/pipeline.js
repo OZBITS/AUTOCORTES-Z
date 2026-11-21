@@ -19,9 +19,8 @@ const RAIZ = path.join(__dirname, '..');
 // Em servidor, tudo que o app grava vai pro volume persistente (DADOS) - senao
 // some a cada deploy, porque a imagem do container e descartavel. No PC local
 // continua igual a sempre: dentro da propria pasta do projeto.
-const DADOS = process.env.DADOS || RAIZ;
-const TRABALHO = path.join(DADOS, 'trabalho');
-const SAIDA = path.join(DADOS, 'saida');
+// as pastas de dados mudam quando a pessoa escolhe outro disco: sempre pergunte ao pastas.js
+const pastas = require('./pastas');
 const MODELOS = process.env.MODELOS_DIR || path.join(RAIZ, 'modelos');
 // Fontes que vem com o programa (usadas no gancho e na legenda queimada)
 const FONTES = path.join(RAIZ, 'fontes');
@@ -29,13 +28,13 @@ const FONTES = path.join(RAIZ, 'fontes');
 /** A pasta de fontes vista da pasta de trabalho, do jeito que o filtro do ffmpeg aceita. */
 function fontsdirRelativo() {
   if (!fs.existsSync(FONTES)) return null;
-  const rel = path.relative(TRABALHO, FONTES).split(path.sep).join('/');
+  const rel = path.relative(pastas.trabalho(), FONTES).split(path.sep).join('/');
   if (!/[:\s']/.test(rel)) return rel;
   // Outro disco ("D:...") ou caminho com espaco - como no programa instalado,
   // com os dados em Videos: leva uma copia das fontes pra dentro da pasta de
   // trabalho. Se nem isso der, cai na fonte do sistema.
   try {
-    const copia = path.join(TRABALHO, 'fontes');
+    const copia = path.join(pastas.trabalho(), 'fontes');
     fs.mkdirSync(copia, { recursive: true });
     for (const nome of fs.readdirSync(FONTES)) {
       const destino = path.join(copia, nome);
@@ -198,7 +197,7 @@ function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir) {
  * @returns {Promise<object>} { info, assinatura, wav, jsonTranscricao, transcricao, energia, picos }
  */
 async function prepararAnalise(video, opcoes, emitir, avisar) {
-  fs.mkdirSync(TRABALHO, { recursive: true });
+  fs.mkdirSync(pastas.trabalho(), { recursive: true });
 
   // ---- 1. inspecionar
   emitir(1, 'lendo', 'Abrindo o video...');
@@ -219,9 +218,9 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
   });
 
   const assinatura = assinaturaDoArquivo(video);
-  const wav = path.join(TRABALHO, assinatura + '.wav');
+  const wav = path.join(pastas.trabalho(), assinatura + '.wav');
   // o v2 no nome invalida o cache quando a gente muda como transcreve
-  const jsonTranscricao = path.join(TRABALHO, assinatura + '-' + (opcoes.modelo || 'small') + '-v2.json');
+  const jsonTranscricao = path.join(pastas.trabalho(), assinatura + '-' + (opcoes.modelo || 'small') + '-v2.json');
 
   // ---- 2. audio
   if (!fs.existsSync(wav)) {
@@ -263,7 +262,7 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
   let picos = [];
   if (opcoes.detectarMomentos !== false) {
     const usarVideo = opcoes.olharImagem !== false;
-    const jsonPicos = path.join(TRABALHO, assinatura + '-picos' + (usarVideo ? '' : '-voz') + '.json');
+    const jsonPicos = path.join(pastas.trabalho(), assinatura + '-picos' + (usarVideo ? '' : '-voz') + '.json');
 
     if (fs.existsSync(jsonPicos)) {
       emitir(64, 'analise', 'Os momentos de reacao ja estavam medidos - reaproveitando.');
@@ -315,7 +314,7 @@ async function processar(opcoes, avisar) {
   if (sessao.formatos && sessao.formatos.indexOf(opcoes.formato) < 0) {
     opcoes.formato = sessao.formatoPadrao;
   }
-  const raiz = sessoes.pastaDeSaida(sessao, SAIDA);
+  const raiz = sessoes.pastaDeSaida(sessao, pastas.saida());
   fs.mkdirSync(raiz, { recursive: true });
 
   const emitir = (pct, etapa, msg) => avisar({ tipo: 'progresso', pct: Math.round(pct * 10) / 10, etapa, msg });
@@ -660,7 +659,7 @@ async function renderizarClipe(ctx, c) {
   let arquivoAss = null;
   if ((querLegenda || gancho || textoFixo) && ctx.vertical) {
     arquivoAss = 'leg-' + ctx.assinatura + '-' + limparNome(ctx.base) + '.ass';
-    legenda.gerarAss(c.palavras || [], c.inicio, path.join(TRABALHO, arquivoAss), {
+    legenda.gerarAss(c.palavras || [], c.inicio, path.join(pastas.trabalho(), arquivoAss), {
       tamanho: opcoes.tamanhoLegenda || 78,
       margemBaixo: margemDaLegenda(opcoes, formatoDoClipe),
       incluirPalavras: querLegenda,
@@ -687,7 +686,7 @@ async function renderizarClipe(ctx, c) {
     // o instante da revelacao muda de clipe pra clipe)
     teaser: c.teaser || null,
     fontsdir: arquivoAss ? fontsdirRelativo() : null,
-    pastaTrabalho: TRABALHO,
+    pastaTrabalho: pastas.trabalho(),
     aoProgredir: (frac) => aoProgredir(frac,
       'Gerando o ' + rotulo + '... ' + Math.round(frac * 100) + '%'),
   });
@@ -698,7 +697,7 @@ async function renderizarClipe(ctx, c) {
   const miniatura = path.join(ctx.pastaSaida, ctx.base + '.jpg');
   await media.gerarMiniatura(ctx.video, c.inicio + c.duracao / 2, miniatura, ctx.vertical);
 
-  if (arquivoAss) { try { fs.unlinkSync(path.join(TRABALHO, arquivoAss)); } catch (_) {} }
+  if (arquivoAss) { try { fs.unlinkSync(path.join(pastas.trabalho(), arquivoAss)); } catch (_) {} }
 
   return Object.assign(semPalavras(c), {
     arquivo: mp4,
@@ -736,6 +735,65 @@ function lerSessao(pasta) {
  *
  * @param {object} pedido  { pasta, numero, inicio, duracao, gancho }
  */
+/**
+ * De onde sai um clipe pra ser refeito. Clipe da live tem o PROPRIO original
+ * (a versao deitada, com folga antes e depois) e a propria fala, guardados na
+ * pasta do projeto - o buffer da live ja foi apagado. Clipe de video gravado
+ * usa o video e a transcricao do projeto.
+ * @returns {object} { video, transcricao, duracao, assinatura, zero }
+ *   zero = em que segundo da live comeca o original (so clipe ao vivo)
+ */
+function fonteDoClipe(pasta, sessao, clipe) {
+  const f = clipe && clipe.fonte;
+  if (f && f.video) {
+    // so o nome do arquivo: se a pasta mudar de lugar, continua achando
+    const video = path.join(pasta, path.basename(f.video));
+    return {
+      video,
+      transcricao: f.transcricao ? path.join(pasta, path.basename(f.transcricao)) : null,
+      duracao: Number(f.duracao) || 0,
+      assinatura: fs.existsSync(video) ? assinaturaDoArquivo(video) : 'clipe',
+      zero: f.zeroNaLive == null ? null : Number(f.zeroNaLive),
+    };
+  }
+  return {
+    video: sessao.video,
+    transcricao: sessao.transcricao,
+    duracao: Number(sessao.duracaoVideo) || 0,
+    assinatura: sessao.assinatura,
+    zero: null,
+  };
+}
+
+/**
+ * Aplica o que a pessoa corrigiu na legenda: { "<inicio em centesimos>": "texto" }.
+ * Texto vazio tira a palavra da legenda.
+ */
+function aplicarEdicoes(palavras, edicoes) {
+  if (!edicoes || typeof edicoes !== 'object') return palavras;
+  const saida = [];
+  for (const p of palavras) {
+    const chave = String(Math.round(p.inicio * 100));
+    if (!Object.prototype.hasOwnProperty.call(edicoes, chave)) { saida.push(p); continue; }
+    const texto = String(edicoes[chave] || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (texto) saida.push(Object.assign({}, p, { texto }));
+  }
+  return saida;
+}
+
+/**
+ * Clipe da live guarda o enquadramento e o texto de quando saiu (a pessoa pode
+ * ter mudado o formato no meio da live): refazer usa os dele, nao os do fim.
+ */
+function doClipeDaLive(clipe) {
+  if (!clipe || !clipe.fonte) return {};
+  const o = {};
+  if (clipe.formatoUsado) o.formato = clipe.formatoUsado;
+  if (clipe.recorte) o.recorte = clipe.recorte;
+  if (clipe.textoFixo !== undefined) o.textoFixo = clipe.textoFixo;
+  return o;
+}
+
 async function refazerClipe(pedido, avisar) {
   avisar = avisar || (() => {});
   const emitir = (pct, msg) => avisar({ tipo: 'progresso', pct: Math.round(pct), etapa: 'cortando', msg });
@@ -743,8 +801,9 @@ async function refazerClipe(pedido, avisar) {
   const sessao = lerSessao(pedido.pasta);
   const antigo = (sessao.clipes || []).find((c) => c.numero === Number(pedido.numero));
   if (!antigo) throw new Error('Nao achei o clipe ' + pedido.numero + ' nessa pasta.');
-  if (!fs.existsSync(sessao.video)) {
-    throw new Error('O video original saiu do lugar: ' + sessao.video);
+  const fonte = fonteDoClipe(pedido.pasta, sessao, antigo);
+  if (!fonte.video || !fs.existsSync(fonte.video)) {
+    throw new Error('O video original saiu do lugar: ' + fonte.video);
   }
 
   emitir(4, 'Preparando o clipe ' + antigo.numero + '...');
@@ -752,7 +811,7 @@ async function refazerClipe(pedido, avisar) {
 
   // Onde o clipe comeca e termina agora. O minimo e 3s porque abaixo disso
   // nao cabe nem o gancho; o maximo e o que sobra ate o fim do video.
-  const limite = sessao.duracaoVideo || Infinity;
+  const limite = fonte.duracao || Infinity;
   let inicio = pedido.inicio == null ? antigo.inicio : Number(pedido.inicio);
   let duracao = pedido.duracao == null ? antigo.duracao : Number(pedido.duracao);
   if (!isFinite(inicio)) inicio = antigo.inicio;
@@ -762,16 +821,23 @@ async function refazerClipe(pedido, avisar) {
   inicio = Math.round(inicio * 100) / 100;
   duracao = Math.round(duracao * 10) / 10;
 
+  // O que a pessoa corrigiu na legenda vale daqui pra frente (fica no clipe)
+  const edicoes = pedido.edicoes && typeof pedido.edicoes === 'object' ? pedido.edicoes : (antigo.edicoesLegenda || null);
+  // Legenda palavra por palavra neste clipe: o que a pessoa marcou no editor,
+  // ou o que ja valia pra ele, ou o do projeto
+  const legendar = typeof pedido.legendar === 'boolean' ? pedido.legendar
+    : (typeof antigo.legendar === 'boolean' ? antigo.legendar : !!(sessao.opcoes || {}).legendar);
+
   // As palavras do trecho novo saem da transcricao que ja esta no disco.
   let palavras = [];
   let texto = antigo.texto;
-  if (sessao.transcricao && fs.existsSync(sessao.transcricao)) {
-    const t = JSON.parse(fs.readFileSync(sessao.transcricao, 'utf8'));
+  if (fonte.transcricao && fs.existsSync(fonte.transcricao)) {
+    const t = JSON.parse(fs.readFileSync(fonte.transcricao, 'utf8'));
     const todas = achatarPalavras(t);
-    palavras = todas.filter((p) => p.fim > inicio && p.inicio < inicio + duracao);
+    palavras = aplicarEdicoes(todas.filter((p) => p.fim > inicio && p.inicio < inicio + duracao), edicoes);
     texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim() || antigo.texto;
-  } else {
-    avisar({ tipo: 'aviso', msg: 'A transcricao saiu do cache: refiz o video, mas sem legenda nova.' });
+  } else if (legendar) {
+    avisar({ tipo: 'aviso', msg: 'A fala desse clipe ainda não foi ouvida: refiz o vídeo, mas sem legenda.' });
   }
 
   // undefined = nao mexeu no gancho; string vazia = quer sem gancho nenhum
@@ -783,22 +849,25 @@ async function refazerClipe(pedido, avisar) {
     inicio: inicio,
     duracao: duracao,
     fim: Math.round((inicio + duracao) * 100) / 100,
-    inicioTexto: mmss(inicio),
-    fimTexto: mmss(inicio + duracao),
+    // clipe da live mostra o horario da live, nao o do arquivo original
+    inicioTexto: mmss((fonte.zero || 0) + inicio),
+    fimTexto: mmss((fonte.zero || 0) + inicio + duracao),
     palavras: palavras,
     texto: texto,
     gancho: gancho,
     teaser: pedido.teaser === undefined ? antigo.teaser : pedido.teaser,
+    legendar: legendar,
+    edicoesLegenda: edicoes || undefined,
     editado: true,
   });
 
   const pronto = await renderizarClipe({
-    video: sessao.video,
-    assinatura: sessao.assinatura,
+    video: fonte.video,
+    assinatura: fonte.assinatura,
     pastaSaida: pedido.pasta,
     base: antigo.base || path.basename(antigo.nomeArquivo, '.mp4'),
-    opcoes: sessao.opcoes || {},
-    vertical: (sessao.opcoes || {}).formato !== 'original',
+    opcoes: Object.assign({}, sessao.opcoes || {}, doClipeDaLive(antigo), { legendar: legendar }),
+    vertical: (antigo.fonte && antigo.formatoUsado ? antigo.formatoUsado : (sessao.opcoes || {}).formato) !== 'original',
     avisar: avisar,
     aoProgredir: (frac, msg) => emitir(8 + frac * 88, msg),
     rotulo: 'clipe ' + antigo.numero,
@@ -959,4 +1028,4 @@ function explicarPoucosNovos(sairam, pedidos, jaTinha, d, minAtual, trecho) {
   return { titulo, detalhe, sugestao };
 }
 
-module.exports = { processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, acharPython, SAIDA, TRABALHO };
+module.exports = { processar, refazerClipe, extrairMais, assinaturaDoArquivo, transcrever, fontsdirRelativo, acharPython, fonteDoClipe };

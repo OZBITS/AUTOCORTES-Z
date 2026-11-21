@@ -25,8 +25,8 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Cortador Automático - Gabriel Workspace")]
 [assembly: System.Reflection.AssemblyCompany("Gabriel Workspace")]
 [assembly: System.Reflection.AssemblyCopyright("© 2026 Gabriel Workspace")]
-[assembly: System.Reflection.AssemblyVersion("2.0.2.0")]
-[assembly: System.Reflection.AssemblyFileVersion("2.0.2.0")]
+[assembly: System.Reflection.AssemblyVersion("2.0.3.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.0.3.0")]
 
 static class Programa
 {
@@ -307,9 +307,30 @@ static class Programa
         icone.Visible = true;
     }
 
+    // A pasta que a pessoa escolheu nos Ajustes do programa (config.json, o
+    // mesmo que o src/pastas.js grava); sem escolha, a de sempre.
+    static string PastaDadosAtual()
+    {
+        try
+        {
+            string cfg = Path.Combine(pastaLocal, "config.json");
+            if (File.Exists(cfg))
+            {
+                var m = Regex.Match(File.ReadAllText(cfg), "\"pastaDados\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+                if (m.Success)
+                {
+                    string p = Regex.Unescape(m.Groups[1].Value);
+                    if (Path.IsPathRooted(p)) return p;
+                }
+            }
+        }
+        catch { }
+        return pastaDados;
+    }
+
     static void AbrirPasta()
     {
-        string saida = Path.Combine(pastaDados, "saida");
+        string saida = Path.Combine(PastaDadosAtual(), "saida");
         try { Directory.CreateDirectory(saida); Process.Start("explorer.exe", "\"" + saida + "\""); } catch { }
     }
 

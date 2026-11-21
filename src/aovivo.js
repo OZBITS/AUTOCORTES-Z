@@ -28,11 +28,13 @@ const baixador = require('./baixar');
 const sessoes = require('./sessoes');
 const legenda = require('./legenda');
 const { gerarCopy } = require('./copy');
-const { SAIDA, TRABALHO, transcrever, fontsdirRelativo } = require('./pipeline');
+const { transcrever, fontsdirRelativo } = require('./pipeline');
+const pastas = require('./pastas');
 
-const DADOS = process.env.DADOS || path.join(__dirname, '..');
-const RAIZ_BUFFER = path.join(DADOS, 'ao-vivo');
 const DUR_PEDACO = 4;
+// Folga que o original de cada clipe guarda antes e depois do corte: e o
+// quanto da pra "ir e voltar" no editor depois que a live passou.
+const MARGEM_EDICAO = 10;
 
 // Quanto o nivel (0-100) precisa passar pra virar clipe automatico
 const LIMIAR = { alta: 45, media: 60, baixa: 75 };
@@ -317,7 +319,7 @@ class SessaoAoVivo {
     this.emitir = emitir;
 
     this.id = Date.now().toString(36);
-    this.dir = path.join(RAIZ_BUFFER, this.id);
+    this.dir = path.join(pastas.aoVivo(), this.id);
     this.estado = 'conectando';
     this.chatStatus = o.lerChat === false ? 'desligado' : (this.plataforma === 'youtube' ? 'sem chat' : 'conectando');
     this.titulo = null;
@@ -338,8 +340,8 @@ class SessaoAoVivo {
 
     this.fila = [];          // clipes pra renderizar
     this.renderizando = false;
-    this.filaTexto = [];     // clipes esperando titulo
-    this.transcrevendo = false;
+    this.originais = [];     // clipes esperando o original com folga (pra editar)
+    this.fazendoOriginal = false;
     this.clipes = [];
     this.parado = false;
   }
@@ -361,7 +363,7 @@ class SessaoAoVivo {
     const d = new Date();
     const dois = (n) => String(n).padStart(2, '0');
     const carimbo = d.getFullYear() + '-' + dois(d.getMonth() + 1) + '-' + dois(d.getDate()) + '_' + dois(d.getHours()) + 'h' + dois(d.getMinutes());
-    this.pasta = path.join(sessoes.pastaDeSaida(perfil, SAIDA), limparNome(this.nomeCanal) + '_ao-vivo_' + carimbo);
+    this.pasta = path.join(sessoes.pastaDeSaida(perfil, pastas.saida()), limparNome(this.nomeCanal) + '_ao-vivo_' + carimbo);
     fs.mkdirSync(this.pasta, { recursive: true });
 
     this.gravar(r.m3u8, r.audio);
@@ -628,6 +630,7 @@ class SessaoAoVivo {
   tique() {
     if (this.parado) return;
     this.lerLista();
+    this.proximoOriginal();
     this.limparBuffer();
 
     // Cao de guarda: o ffmpeg pode ficar "conectado" sem gravar nada (site
@@ -788,9 +791,9 @@ class SessaoAoVivo {
     // texto fixo da tela (.ass na pasta de trabalho, o ffmpeg roda la dentro)
     let ass = null;
     if (filtro && legenda.temTextoFixo(this.textoFixo)) {
-      fs.mkdirSync(TRABALHO, { recursive: true });
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
       ass = 'aovivo-texto-' + this.id + '.ass';
-      legenda.gerarAss([], 0, path.join(TRABALHO, ass), { incluirPalavras: false, textoFixo: this.textoFixo });
+      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { incluirPalavras: false, textoFixo: this.textoFixo });
     }
     // Voz atrasada: pular direto pro meio da lista de pedacos (concat + -ss)
     // fazia a imagem so comecar no proximo quadro-chave, 1-2s depois do som -
@@ -804,7 +807,6 @@ class SessaoAoVivo {
     try { fs.unlinkSync(lista); } catch (_) {}
 
     let args;
-    let original = null;
     try {
       if (filtro) {
         // -ss antes da entrada num arquivo comum: corte exato (decodifica desde
@@ -823,18 +825,8 @@ class SessaoAoVivo {
           '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy', '-avoid_negative_ts', 'make_zero'];
       }
       args.push('-movflags', '+faststart', mp4);
-      await media.rodar(ffmpeg, args, { cwd: TRABALHO });
+      await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });
 
-      // a versao deitada, sem mexer em nada - pra quem quer editar por fora:
-      // copia do quadro-chave mais perto, com imagem e som saindo juntos
-      if (this.salvarOriginal && filtro) {
-        original = path.join(this.pasta, nomeBase + '-original.mp4');
-        try {
-          await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
-            '-t', dur.toFixed(3), '-map', '0:v', '-map', '0:a?', '-c', 'copy',
-            '-avoid_negative_ts', 'make_zero', '-movflags', '+faststart', original]);
-        } catch (_) { original = null; }
-      }
     } finally {
       try { fs.unlinkSync(junto); } catch (_) {}
     }
@@ -861,9 +853,13 @@ class SessaoAoVivo {
       hashtags: /\bgta\b|vice city|leonida/i.test(this.titulo || '') ? ['gta6', 'gtavi', 'gta'] : ['cortes', 'live'],
       arquivo: mp4,
       nomeArquivo: path.basename(mp4),
-      original,
+      original: null,
       miniatura: fs.existsSync(jpg) ? jpg : null,
       formatoUsado: this.formato,
+      // o enquadramento e o texto de quando o clipe saiu: o editor refaz igual
+      recorte: this.recorte || null,
+      textoFixo: this.textoFixo || null,
+      legendar: false,
       tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
       segundosPraFicarPronto: Math.round((Date.now() - t0) / 100) / 10,
     };
@@ -872,40 +868,106 @@ class SessaoAoVivo {
     this.gravarRelatorio();
     this.emitir({ tipo: 'clipe', clipe });
 
-    if (this.sugerirTitulo) { this.filaTexto.push(clipe); this.proximoTexto(); }
+    this.agendarOriginal(clipe, pedido.inicio);
   }
 
-  // ------------------------------------------------------------ titulo
+  // ------------------------------------------------------------ edicao
 
-  /** Transcreve so o clipe pronto e monta titulo + legenda do post. */
-  async proximoTexto() {
-    if (this.transcrevendo || !this.filaTexto.length) return;
-    this.transcrevendo = true;
-    const clipe = this.filaTexto.shift();
+  /**
+   * Pra editar um clipe da live depois (ir, voltar, mexer na legenda), ele
+   * precisa de um original proprio: o buffer da live e apagado. Assim que a
+   * live gravar a folga depois do lance, monta a versao deitada com 10s antes
+   * e 10s depois, transcreve a fala dela e guarda tudo na pasta do projeto.
+   * O clipe ja apareceu pronto antes disso - nada aqui atrasa o "postar primeiro".
+   */
+  agendarOriginal(clipe, inicioNaLive) {
+    const job = {
+      clipe,
+      inicioNaLive,
+      inicio: Math.max(0, inicioNaLive - MARGEM_EDICAO),
+      fim: inicioNaLive + clipe.duracao + MARGEM_EDICAO,
+    };
+    this.travar(job, 1);
+    this.originais.push(job);
+    this.proximoOriginal();
+  }
+
+  async proximoOriginal() {
+    if (this.fazendoOriginal || !this.originais.length) return;
+    const job = this.originais[0];
+    // espera a folga depois do lance ser gravada (ou a live parar)
+    if (!this.parado && this.total < job.fim) return;
+    this.fazendoOriginal = true;
+    this.originais.shift();
+    const clipe = job.clipe;
+    const base = path.basename(clipe.nomeArquivo, '.mp4');
     try {
-      fs.mkdirSync(TRABALHO, { recursive: true });
-      const base = path.join(TRABALHO, 'aovivo-' + this.id + '-' + clipe.numero);
-      await media.extrairAudio(clipe.arquivo, base + '.wav', clipe.duracao);
-      const t = await transcrever(base + '.wav', base + '.json', clipe.duracao, 'base', this.idioma);
-      const texto = (t.segmentos || []).map((s) => (s.texto || '').trim()).join(' ').trim();
-      try { fs.unlinkSync(base + '.wav'); fs.unlinkSync(base + '.json'); } catch (_) {}
-      if (texto.length > 8) {
-        const cp = gerarCopy({ texto, inicio: clipe.inicio, tags: [] }, (this.titulo || ''), sessoes.pegar());
+      const { ffmpeg } = await media.garantirFfmpeg();
+      const usados = this.pedacos.filter((p) => p.t0 < job.fim && p.t0 + p.dur > job.inicio && fs.existsSync(p.arquivo));
+      if (!usados.length) throw new Error('esse trecho já saiu do buffer');
+      const lista = path.join(this.dir, base + '-orig.txt');
+      fs.writeFileSync(lista, usados.map((p) => "file '" + p.arquivo.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'").join('\n'), 'utf8');
+      const junto = path.join(this.dir, base + '-orig.mkv');
+      const original = path.join(this.pasta, base + '-original.mp4');
+      try {
+        await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
+          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-f', 'matroska', junto]);
+        await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', junto,
+          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-movflags', '+faststart', original]);
+      } finally {
+        try { fs.unlinkSync(lista); } catch (_) {}
+        try { fs.unlinkSync(junto); } catch (_) {}
+      }
+
+      // O original comeca no primeiro pedaco (que sempre abre num quadro-chave):
+      // o clipe fica a "offset" segundos dele.
+      const zero = usados[0].t0;
+      const ultimo = usados[usados.length - 1];
+      const offset = Math.round(Math.max(0, job.inicioNaLive - zero) * 100) / 100;
+      clipe.original = original;
+      clipe.fonte = {
+        video: path.basename(original),
+        duracao: Math.round((ultimo.t0 + ultimo.dur - zero) * 100) / 100,
+        zeroNaLive: Math.round(zero * 100) / 100,
+      };
+      clipe.inicio = offset;
+      clipe.fim = Math.round((offset + clipe.duracao) * 100) / 100;
+      this.gravarRelatorio();
+      this.emitir({ tipo: 'clipe-atualizado', clipe });
+
+      // a fala do original: legenda editavel no editor e o titulo sugerido
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const wav = path.join(pastas.trabalho(), 'aovivo-' + this.id + '-' + clipe.numero + '.wav');
+      const fala = path.join(this.pasta, base + '-fala.json');
+      try {
+        await media.extrairAudio(original, wav, clipe.fonte.duracao);
+        const t = await transcrever(wav, fala, clipe.fonte.duracao, 'base', this.idioma);
+        clipe.fonte.transcricao = path.basename(fala);
+        const palavras = (t.segmentos || []).reduce((acc, s) => acc.concat(s.palavras || []), [])
+          .filter((p) => p.fim > offset && p.inicio < offset + clipe.duracao);
+        const texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
         clipe.texto = texto;
-        clipe.titulo = cp.titulo;
-        clipe.titulos = cp.titulos;
-        clipe.hashtags = cp.hashtags;
-        clipe.legendaPost = cp.legenda;
+        if (this.sugerirTitulo && texto.length > 8) {
+          const cp = gerarCopy({ texto, inicio: offset, tags: [] }, (this.titulo || ''), sessoes.pegar());
+          clipe.titulo = cp.titulo;
+          clipe.titulos = cp.titulos;
+          clipe.hashtags = cp.hashtags;
+          clipe.legendaPost = cp.legenda;
+        }
         this.gravarRelatorio();
         this.emitir({ tipo: 'clipe-atualizado', clipe });
+      } catch (e) {
+        // trecho sem fala (so jogo, so musica) nao e erro: so fica sem legenda
+        if (!/fala nenhuma/i.test(e.message)) this.emitir({ tipo: 'aviso', msg: 'Não consegui ouvir a fala do clipe ' + clipe.numero + ' (' + e.message + ').' });
+      } finally {
+        try { fs.unlinkSync(wav); } catch (_) {}
       }
     } catch (e) {
-      // titulo e bonus: o clipe ja esta pronto. Trecho sem fala (so jogo,
-      // so musica) nao e erro - fica o titulo padrao, sem aviso.
-      if (!/fala nenhuma/i.test(e.message)) this.emitir({ tipo: 'aviso', msg: 'Não consegui sugerir título pro clipe ' + clipe.numero + ' (' + e.message + ').' });
+      this.emitir({ tipo: 'aviso', msg: 'O clipe ' + clipe.numero + ' está pronto, mas não deu pra preparar a edição dele (' + e.message + ').' });
     } finally {
-      this.transcrevendo = false;
-      this.proximoTexto();
+      this.travar(job, -1);
+      this.fazendoOriginal = false;
+      this.proximoOriginal();
     }
   }
 
@@ -923,6 +985,28 @@ class SessaoAoVivo {
       clipes: this.clipes,
     };
     try { fs.writeFileSync(path.join(this.pasta, 'relatorio.json'), JSON.stringify(r, null, 2), 'utf8'); } catch (_) {}
+    // o que o editor precisa pra refazer um clipe: cada clipe traz o proprio
+    // original e enquadramento (campo fonte), entao aqui fica so o geral
+    const sessao = {
+      aoVivo: true,
+      video: null,
+      duracaoVideo: 0,
+      opcoes: {
+        sessao: sessoes.pegar().id, formato: this.formato, recorte: this.recorte, textoFixo: this.textoFixo,
+        legendar: false, textoGancho: false, qualidade: 'alta', detectarWebcam: false, idioma: this.idioma,
+      },
+      clipes: this.clipes,
+    };
+    try { fs.writeFileSync(path.join(this.pasta, 'sessao.json'), JSON.stringify(sessao, null, 2), 'utf8'); } catch (_) {}
+  }
+
+  /** Um clipe refeito no editor passa a valer na lista da live (e no disco). */
+  atualizarClipe(novo) {
+    const i = this.clipes.findIndex((c) => c.numero === novo.numero);
+    if (i < 0) return;
+    this.clipes[i] = Object.assign({}, this.clipes[i], novo);
+    this.gravarRelatorio();
+    this.emitir({ tipo: 'clipe-atualizado', clipe: this.clipes[i] });
   }
 
   ajustar(o) {
@@ -963,7 +1047,11 @@ class SessaoAoVivo {
     if (this.procYt) { try { this.procYt.kill(); } catch (_) {} }
     // o que ainda esta na fila termina; depois o buffer (temporario) e apagado
     const limpar = () => {
-      if (this.renderizando || this.fila.length) return setTimeout(limpar, 2000);
+      // termina os clipes na fila e os originais (pra editar) antes de apagar o buffer
+      if (this.renderizando || this.fila.length || this.fazendoOriginal || this.originais.length) {
+        this.proximoOriginal();
+        return setTimeout(limpar, 2000);
+      }
       for (const p of this.pedacos) { try { fs.unlinkSync(p.arquivo); } catch (_) {} }
       try {
         for (const n of fs.readdirSync(this.dir)) fs.unlinkSync(path.join(this.dir, n));
@@ -985,9 +1073,9 @@ class SessaoAoVivo {
  */
 function limparSobras() {
   let pastas = [];
-  try { pastas = fs.readdirSync(RAIZ_BUFFER, { withFileTypes: true }).filter((d) => d.isDirectory()); } catch (_) { return; }
+  try { pastas = fs.readdirSync(pastas.aoVivo(), { withFileTypes: true }).filter((d) => d.isDirectory()); } catch (_) { return; }
   for (const d of pastas) {
-    const dir = path.join(RAIZ_BUFFER, d.name);
+    const dir = path.join(pastas.aoVivo(), d.name);
     try {
       for (const n of fs.readdirSync(dir)) {
         if (/\.(ts|mkv|csv|txt)$/i.test(n)) fs.unlinkSync(path.join(dir, n));
@@ -997,4 +1085,4 @@ function limparSobras() {
   }
 }
 
-module.exports = { SessaoAoVivo, limparSobras, checarLink, resolverAoVivo, plataformaDe, canalDoLink, RAIZ_BUFFER };
+module.exports = { SessaoAoVivo, limparSobras, checarLink, resolverAoVivo, plataformaDe, canalDoLink };

@@ -122,20 +122,40 @@ VÍDEO GRAVADO
 5. Não gostou de algum? "Editar" no cartão do clipe.
 
 
-ONDE FICAM OS ARQUIVOS
-----------------------
+ONDE FICAM OS ARQUIVOS (e como trocar o disco)
+----------------------------------------------
 
-Como o disco C está quase cheio, tudo vai pro D:
+Em Ajustes > "Onde salvar" aparecem os discos do PC com o espaço livre
+de cada um. Clique num disco (ex.: E:) ou em "Escolher outra pasta".
+Vale na hora, sem fechar o programa. Dentro da pasta escolhida ficam:
 
-   D:\CortadorAutomatico\saida\cortes\   os cortes (cada projeto numa pasta)
-   D:\CortadorAutomatico\baixados\       vídeos baixados por link
-   D:\CortadorAutomatico\ao-vivo\        a gravação temporária da live
-                                  (apagada sozinha ao parar)
+   saida\cortes\    os cortes (cada projeto numa pasta)
+   baixados\        vídeos baixados por link
+   ao-vivo\         a gravação temporária da live (apagada ao parar)
+   trabalho\        áudio e transcrições (dá pra apagar se precisar)
 
-Os projetos de antes (Lucas, Jamble) continuam na pasta  saida\  do
-programa. A versão antiga, com essas sessões, está guardada no git:
-   git checkout versao-lucas-jamble
+O que já foi salvo na pasta antiga continua lá. "Padrão" volta pra
+pasta de sempre. Não dá pra trocar no meio de um corte ou de uma live.
 
+
+EDITAR OS CLIPES DA LIVE
+------------------------
+
+Uns segundos depois que o clipe ao vivo fica pronto, o botão "Editar"
+dele libera (ele espera a live gravar mais 10s depois do lance). Cada
+clipe guarda uma versão deitada com 10s antes e 10s depois, então no
+editor dá pra voltar e avançar o começo e o fim, mudar o texto da tela
+e corrigir a legenda. Funciona com a live ainda gravando e depois, pelo
+botão Projetos.
+
+
+CORRIGIR A LEGENDA (vídeo gravado e ao vivo)
+--------------------------------------------
+
+No editor de qualquer clipe tem "Legenda palavra por palavra" (liga ou
+desliga só naquele clipe) e "Corrigir a legenda": cada palavra dita
+dentro do corte aparece num campinho. Clique, corrija e aperte "Refazer
+este clipe". Apagar o texto de uma palavra tira ela da legenda.
 
 QUANTO TEMPO DEMORA
 -------------------

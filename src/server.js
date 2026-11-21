@@ -9,15 +9,10 @@ const path = require('path');
 const { spawn, execFile } = require('child_process');
 const { URL } = require('url');
 
-// O disco C desta maquina vive cheio, e live gravada ocupa uns 2 GB por hora.
-// Sem DADOS definido, tudo que o programa grava (downloads, buffer da live,
-// cortes) vai pro D:, se ele existir. Tem que vir ANTES dos requires: os
-// modulos leem a pasta no carregamento.
-if (!process.env.DADOS && process.platform === 'win32' && fs.existsSync('D:/')) {
-  process.env.DADOS = 'D:/CortadorAutomatico';
-}
+// Onde gravar (disco/pasta) fica no pastas.js: muda na hora, pelos Ajustes.
+const pastas = require('./pastas');
 
-const { processar, refazerClipe, extrairMais, fontsdirRelativo, SAIDA, TRABALHO } = require('./pipeline');
+const { processar, refazerClipe, extrairMais, fontsdirRelativo } = require('./pipeline');
 const legenda = require('./legenda');
 const media = require('./media');
 const baixador = require('./baixar');
@@ -210,10 +205,10 @@ function nomeDeArquivoSeguro(nome) {
  */
 function textoDaPrevia(textoFixo, sid) {
   if (!legenda.temTextoFixo(textoFixo)) return null;
-  fs.mkdirSync(TRABALHO, { recursive: true });
+  fs.mkdirSync(pastas.trabalho(), { recursive: true });
   const nome = 'previa-texto-' + idDeSessao(sid) + '.ass';
-  legenda.gerarAss([], 0, path.join(TRABALHO, nome), { incluirPalavras: false, textoFixo });
-  return { ass: nome, fontsdir: fontsdirRelativo(), cwd: TRABALHO };
+  legenda.gerarAss([], 0, path.join(pastas.trabalho(), nome), { incluirPalavras: false, textoFixo });
+  return { ass: nome, fontsdir: fontsdirRelativo(), cwd: pastas.trabalho() };
 }
 
 /** Um id curto por sessao de edicao, pra frame/previa de gente diferente nao se pisarem. */
@@ -240,6 +235,41 @@ const EXPLORER = programaDoWindows('explorer.exe', 'explorer.exe');
 // ---------------------------------------------------------------- dialogo nativo
 
 /** Abre a janelinha do Windows pra escolher o video e devolve o caminho. */
+/** O que a janela mostra em "Onde salvar". */
+function estadoArmazenamento() {
+  return {
+    pasta: pastas.dados(),
+    cortes: pastas.saida(),
+    livreGb: pastas.livreAtual(),
+    padrao: pastas.padrao(),
+    discos: pastas.discos(),
+    escolhaDialogo: process.platform === 'win32',
+  };
+}
+
+/** Janela do Windows pra escolher uma pasta (a de salvar os cortes). */
+function escolherPastaNativa() {
+  return new Promise((resolve) => {
+    const script = [
+      'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
+      '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+      '$d.Description = "Escolha onde o Cortador Automatico vai salvar os cortes"',
+      '$d.ShowNewFolderButton = $true',
+      '$t = New-Object System.Windows.Forms.Form',
+      '$t.TopMost = $true',
+      'if ($d.ShowDialog($t) -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::OutputEncoding = [Text.Encoding]::UTF8; Write-Output $d.SelectedPath }',
+      '$t.Dispose()',
+    ].join('; ');
+    execFile(POWERSHELL, ['-NoProfile', '-STA', '-Command', script],
+      { windowsHide: true, timeout: 300000, encoding: 'utf8' },
+      (erro, saida) => {
+        if (erro) return resolve(null);
+        const pasta = String(saida || '').trim();
+        resolve(pasta && fs.existsSync(pasta) ? pasta : null);
+      });
+  });
+}
+
 function escolherArquivoNativo() {
   return new Promise((resolve) => {
     const script = [
@@ -308,7 +338,7 @@ function localizarPorNome(nome, tamanho) {
 function dentroDaSaida(caminho) {
   if (!caminho) return null;
   const resolvido = path.resolve(String(caminho));
-  const rel = path.relative(path.resolve(SAIDA), resolvido);
+  const rel = path.relative(path.resolve(pastas.saida()), resolvido);
   if (rel.startsWith('..') || path.isAbsolute(rel)) return null;
   return resolvido;
 }
@@ -413,7 +443,7 @@ const servidor = http.createServer(async (req, res) => {
       }
 
       const nome = nomeDeArquivoSeguro(url.searchParams.get('nome'));
-      const pastaDestino = process.env.DADOS ? path.join(process.env.DADOS, 'baixados') : path.join(RAIZ, 'baixados');
+      const pastaDestino = pastas.baixados();
       fs.mkdirSync(pastaDestino, { recursive: true });
       const destino = path.join(pastaDestino, Date.now() + '-' + nome);
 
@@ -500,8 +530,8 @@ const servidor = http.createServer(async (req, res) => {
     if (rota === '/api/aovivo/quadro') {
       const pedacos = aoVivoAtual ? aoVivoAtual.ultimosPedacos(5) : [];
       if (!pedacos.length) return json(res, 404, { erro: 'Ainda não tem nenhum pedaço da live gravado.' });
-      fs.mkdirSync(TRABALHO, { recursive: true });
-      const alvo = path.join(TRABALHO, 'aovivo-quadro.jpg');
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const alvo = path.join(pastas.trabalho(), 'aovivo-quadro.jpg');
       // Um pedaco pode nao ter imagem legivel (comecou no meio de um quadro):
       // tenta os mais novos ate um dar certo, e diz qual foi - o editor usa
       // esse mesmo pedaco pra previa.
@@ -521,8 +551,8 @@ const servidor = http.createServer(async (req, res) => {
       const corpo = await lerCorpo(req);
       const ped = aoVivoAtual && aoVivoAtual.ultimoPedaco();
       if (!ped) return json(res, 400, { erro: 'Ainda não tem imagem da live.' });
-      fs.mkdirSync(TRABALHO, { recursive: true });
-      const alvo = path.join(TRABALHO, 'aovivo-previa.jpg');
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const alvo = path.join(pastas.trabalho(), 'aovivo-previa.jpg');
       await media.gerarPrevia(ped, 0, corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, 'aovivo'));
       return enviarImagem(res, alvo);
     }
@@ -627,8 +657,8 @@ const servidor = http.createServer(async (req, res) => {
       const corpo = await lerCorpo(req);
       if (!corpo.video || !fs.existsSync(corpo.video)) return json(res, 400, { erro: 'video nao encontrado' });
 
-      fs.mkdirSync(TRABALHO, { recursive: true });
-      const alvo = path.join(TRABALHO, 'frame-' + idDeSessao(corpo.sid) + '.jpg');
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const alvo = path.join(pastas.trabalho(), 'frame-' + idDeSessao(corpo.sid) + '.jpg');
       await media.gerarFrame(corpo.video, Number(corpo.segundo) || 0, alvo, 960);
       return enviarImagem(res, alvo);
     }
@@ -638,8 +668,8 @@ const servidor = http.createServer(async (req, res) => {
       const corpo = await lerCorpo(req);
       if (!corpo.video || !fs.existsSync(corpo.video)) return json(res, 400, { erro: 'video nao encontrado' });
 
-      fs.mkdirSync(TRABALHO, { recursive: true });
-      const alvo = path.join(TRABALHO, 'previa-' + idDeSessao(corpo.sid) + '.jpg');
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const alvo = path.join(pastas.trabalho(), 'previa-' + idDeSessao(corpo.sid) + '.jpg');
       await media.gerarPrevia(corpo.video, Number(corpo.segundo) || 0,
         corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, corpo.sid));
       return enviarImagem(res, alvo);
@@ -686,8 +716,19 @@ const servidor = http.createServer(async (req, res) => {
         inicio: corpo.inicio,
         duracao: corpo.duracao,
         gancho: corpo.gancho,
+        // legenda palavra por palavra neste clipe e o que a pessoa corrigiu nela
+        legendar: typeof corpo.legendar === 'boolean' ? corpo.legendar : undefined,
+        edicoes: corpo.edicoes && typeof corpo.edicoes === 'object' ? corpo.edicoes : undefined,
       }, (ev) => emitir(id, ev))
-        .then(() => emitir(id, { tipo: 'fim' }))
+        .then((pronto) => {
+          // Clipe da live que ainda esta gravando: a live guarda a lista dos
+          // clipes na memoria e regrava a pasta a cada clipe novo - sem isso,
+          // o proximo clipe desfaria a edicao.
+          if (aoVivoAtual && pronto && aoVivoAtual.pasta && path.resolve(aoVivoAtual.pasta) === path.resolve(pasta)) {
+            aoVivoAtual.atualizarClipe(pronto);
+          }
+          emitir(id, { tipo: 'fim' });
+        })
         .catch((e) => emitir(id, { tipo: 'erro', msg: e.message || String(e) }))
         .finally(() => { jobAtivo = false; });
       return;
@@ -707,7 +748,7 @@ const servidor = http.createServer(async (req, res) => {
 
     // O video pra assistir no editor: o de um projeto (?pasta=) ou o que acabou
     // de ser escolhido na janela (?caminho=). Com Range, pra dar pra pular.
-    const fonteDaUrl = () => ({ pasta: url.searchParams.get('pasta'), caminho: url.searchParams.get('caminho') });
+    const fonteDaUrl = () => ({ pasta: url.searchParams.get('pasta'), caminho: url.searchParams.get('caminho'), clipe: url.searchParams.get('clipe') });
 
     if (rota === '/api/video') {
       const video = projetos.videoDe(fonteDaUrl());
@@ -798,7 +839,7 @@ const servidor = http.createServer(async (req, res) => {
 
     if (rota === '/api/abrir' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
-      const alvo = String(corpo.caminho || SAIDA);
+      const alvo = String(corpo.caminho || pastas.saida());
       // No Windows local, abre o Explorer de verdade. Em servidor isso nao
       // existe (abriria uma janela na maquina do servidor, que ninguem ve) -
       // devolvemos o link de download pra pessoa baixar o clipe direto.
@@ -819,7 +860,32 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     if (rota === '/api/saida') {
-      return json(res, 200, { pasta: SAIDA });
+      return json(res, 200, { pasta: pastas.saida() });
+    }
+
+    // ---------------------------------------------------------- onde salvar
+    // A pasta de dados (cortes, downloads, gravacao da live) e os discos do PC
+    if (rota === '/api/armazenamento' && req.method === 'GET') {
+      return json(res, 200, estadoArmazenamento());
+    }
+
+    // Janela do Windows pra escolher uma pasta
+    if (rota === '/api/armazenamento/escolher' && req.method === 'POST') {
+      if (process.platform !== 'win32') return json(res, 200, { pasta: null });
+      return json(res, 200, { pasta: await escolherPastaNativa() });
+    }
+
+    // Passa a gravar em outra pasta (vale na hora, sem reiniciar)
+    if (rota === '/api/armazenamento' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      if (jobAtivo) return json(res, 409, { erro: 'Espere terminar o vídeo que está sendo cortado antes de trocar a pasta.' });
+      if (aoVivoAtual && !aoVivoAtual.parado) return json(res, 409, { erro: 'Pare a live que está sendo gravada antes de trocar a pasta.' });
+      try {
+        pastas.mudar(corpo.padrao ? null : corpo.pasta);
+        return json(res, 200, estadoArmazenamento());
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
     }
 
     res.writeHead(404);

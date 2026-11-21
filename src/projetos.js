@@ -13,7 +13,8 @@ const path = require('path');
 
 const media = require('./media');
 const { achatarPalavras } = require('./score');
-const { SAIDA, TRABALHO, assinaturaDoArquivo } = require('./pipeline');
+const { assinaturaDoArquivo, fonteDoClipe } = require('./pipeline');
+const pastas = require('./pastas');
 const sessoes = require('./sessoes');
 
 function lerJson(arquivo) {
@@ -22,7 +23,7 @@ function lerJson(arquivo) {
 
 /** A pasta onde ficam os projetos do perfil (saida/cortes). */
 function raizDe(sessao) {
-  return path.resolve(sessoes.pastaDeSaida(sessoes.pegar(sessao), SAIDA));
+  return path.resolve(sessoes.pastaDeSaida(sessoes.pegar(sessao), pastas.saida()));
 }
 
 /**
@@ -150,6 +151,7 @@ function abrir(bruto) {
       quantidade: opcoes.quantidade || null,
       minDur: opcoes.minDur || null,
       maxDur: opcoes.maxDur || null,
+      legendar: !!opcoes.legendar,
     },
     temTranscricao: !!(p.sessao && p.sessao.transcricao && fs.existsSync(p.sessao.transcricao)),
     relatorio: fs.existsSync(relatorioTxt) ? relatorioTxt : null,
@@ -176,7 +178,7 @@ function liberarVideo(caminho) {
 /** A transcricao desse video, se ele ja foi ouvido alguma vez. Prefere a mais precisa. */
 function transcricaoGuardada(assinatura) {
   for (const modelo of ['medium', 'small', 'base']) {
-    const arquivo = path.join(TRABALHO, assinatura + '-' + modelo + '-v2.json');
+    const arquivo = path.join(pastas.trabalho(), assinatura + '-' + modelo + '-v2.json');
     if (fs.existsSync(arquivo)) return arquivo;
   }
   return null;
@@ -189,6 +191,16 @@ function transcricaoGuardada(assinatura) {
  */
 function fonteDe(pedido) {
   pedido = pedido || {};
+  if (pedido.pasta && pedido.clipe) {
+    // um clipe da live: o original e a fala dele, guardados na pasta do projeto
+    const s = sessaoDe(pedido.pasta);
+    const clipe = s && (s.sessao.clipes || []).find((c) => String(c.numero) === String(pedido.clipe));
+    if (clipe && clipe.fonte) {
+      const f = fonteDoClipe(s.pasta, s.sessao, clipe);
+      if (!fs.existsSync(f.video)) return null;
+      return { video: f.video, assinatura: f.assinatura, duracao: f.duracao, transcricao: f.transcricao };
+    }
+  }
   if (pedido.pasta) {
     const s = sessaoDe(pedido.pasta);
     if (!s || !s.sessao.video || !fs.existsSync(s.sessao.video)) return null;
@@ -252,7 +264,7 @@ async function quadro(pedido, segundo) {
   const fimDoVideo = Math.max(0, (f.duracao || Infinity) - 0.5);
   const t = Math.min(fimDoVideo, Math.max(0, Math.round((Number(segundo) || 0) * 2) / 2));
 
-  const pasta = path.join(TRABALHO, 'quadros');
+  const pasta = path.join(pastas.trabalho(), 'quadros');
   const chave = f.assinatura + '-' + Math.round(t * 10);
   const alvo = path.join(pasta, chave + '.jpg');
   if (fs.existsSync(alvo)) return alvo;

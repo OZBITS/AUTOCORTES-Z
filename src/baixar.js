@@ -9,7 +9,7 @@ const path = require('path');
 const RAIZ = path.join(__dirname, '..');
 // Em servidor os videos baixados vao pro volume persistente (DADOS); no PC
 // continuam dentro da propria pasta do projeto, como sempre foi.
-const BAIXADOS = process.env.DADOS ? path.join(process.env.DADOS, 'baixados') : path.join(RAIZ, 'baixados');
+const pastas = require('./pastas'); // a pasta de videos baixados muda quando a pessoa escolhe outro disco
 
 // Mesma historia do ffmpeg: o winget instala mas o PATH so vale em processo
 // novo. Da pra apontar um binario proprio pela variavel YTDLP_PATH.
@@ -281,7 +281,7 @@ async function baixar(url, opcoes, aoProgredir) {
   // Guarda o erro cru num log: a mensagem amigavel some da tela, mas quando
   // um video especifico nao baixa, o motivo tecnico esta aqui pra investigar.
   try {
-    const pastaTrabalho = process.env.DADOS ? path.join(process.env.DADOS, 'trabalho') : path.join(RAIZ, 'trabalho');
+    const pastaTrabalho = pastas.trabalho();
     fs.mkdirSync(pastaTrabalho, { recursive: true });
     fs.appendFileSync(
       path.join(pastaTrabalho, 'erros-download.log'),
@@ -301,7 +301,7 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
   opcoes = opcoes || {};
   estrategia = estrategia || { args: [] };
   const bin = await garantirYtDlp();
-  fs.mkdirSync(BAIXADOS, { recursive: true });
+  fs.mkdirSync(pastas.baixados(), { recursive: true });
 
   const limite = opcoes.limiteAltura === 0 ? null : (opcoes.limiteAltura || 1080);
 
@@ -319,7 +319,7 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
         'bv*+ba/b',
       ].join('/');
 
-  const modelo = path.join(BAIXADOS, '%(title).60B [%(id)s].%(ext)s');
+  const modelo = path.join(pastas.baixados(), '%(title).60B [%(id)s].%(ext)s');
 
   return new Promise((resolve, reject) => {
     const args = [
@@ -401,11 +401,11 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
 
       // Rede de seguranca: pega o arquivo de video mais novo da pasta
       try {
-        const recente = fs.readdirSync(BAIXADOS)
+        const recente = fs.readdirSync(pastas.baixados())
           .filter((f) => /\.(mp4|mkv|webm|mov)$/i.test(f))
-          .map((f) => ({ f, t: fs.statSync(path.join(BAIXADOS, f)).mtimeMs }))
+          .map((f) => ({ f, t: fs.statSync(path.join(pastas.baixados(), f)).mtimeMs }))
           .sort((a, b) => b.t - a.t)[0];
-        if (recente) return resolve(path.join(BAIXADOS, recente.f));
+        if (recente) return resolve(path.join(pastas.baixados(), recente.f));
       } catch (_) { /* cai no erro abaixo */ }
 
       reject(new Error('O download terminou mas nao achei o arquivo.'));
@@ -548,10 +548,10 @@ async function baixarHls(url, opcoes, aoProgredir) {
   const deVerdade = { inicio: segs[0].inicio, fim: segs[segs.length - 1].inicio + segs[segs.length - 1].duracao };
   const inteiro = !pedido || (deVerdade.inicio <= 0 && deVerdade.fim >= pl.duracao - 1);
 
-  fs.mkdirSync(BAIXADOS, { recursive: true });
+  fs.mkdirSync(pastas.baixados(), { recursive: true });
   const base = nomeDeArquivo(opcoes.nome || 'replay') +
     (inteiro ? '' : '_' + horaCurta(deVerdade.inicio) + '-' + horaCurta(deVerdade.fim));
-  const destino = path.join(BAIXADOS, base + '.mp4');
+  const destino = path.join(pastas.baixados(), base + '.mp4');
 
   // Mesma live, mesmo pedaco: ja esta no disco, nao baixa de novo
   if (fs.existsSync(destino) && fs.statSync(destino).size > 0) {
@@ -690,4 +690,4 @@ function ffmpegDeHls(ffmpeg, url, trecho, destino, avisar) {
   });
 }
 
-module.exports = { baixar, espiar, garantirYtDlp, pareceLink, BAIXADOS, ehHls, espiarHls, baixarHls };
+module.exports = { baixar, espiar, garantirYtDlp, pareceLink, ehHls, espiarHls, baixarHls };

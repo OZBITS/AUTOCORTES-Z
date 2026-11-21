@@ -362,6 +362,25 @@
   .gaveta-topo { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--linha); }
   .gaveta-topo h3 { font-size: var(--t2); font-weight: 500; letter-spacing: -.02em; flex: 1; }
   .gaveta-corpo { padding: 20px; overflow-y: auto; flex: 1; }
+  .pasta-atual { padding: 10px 12px; border-radius: 10px; background: var(--superficie); border: 1px solid var(--linha); margin-bottom: 12px; }
+  .pasta-atual b { display: block; font-size: var(--t5); font-weight: 650; word-break: break-all; }
+  .pasta-atual span { font-size: var(--t6); color: var(--texto3); }
+  .discos { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+  .discos button {
+    display: grid; gap: 2px; text-align: left; padding: 9px 11px; border-radius: 10px; cursor: pointer;
+    background: var(--vidro); border: 1px solid var(--linha); color: var(--texto); font: inherit; transition: .2s var(--suave);
+  }
+  .discos button:hover:not(:disabled) { border-color: var(--linha2); background: var(--vidro2); }
+  .discos button[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-fundo); }
+  .discos button b { font-size: var(--t4); font-weight: 700; }
+  .discos button span { font-size: var(--t6); color: var(--texto3); }
+  .discos button .barra-disco { height: 4px; border-radius: 4px; background: var(--linha2); overflow: hidden; margin-top: 4px; }
+  .discos button .barra-disco i { display: block; height: 100%; background: var(--marca2); }
+  .discos button.pouco .barra-disco i { background: #ff7a85; }
+  .discos button.pouco span { color: #ff9aa2; }
+  .pasta-status { font-size: var(--t6); margin-top: 8px; color: var(--texto2); min-height: 1em; }
+  .pasta-status.ok { color: var(--verde); }
+  .pasta-status.ruim { color: #ff9aa2; }
   .grupo.assinatura { display: flex; gap: 14px; align-items: center; padding-top: 18px; }
   .grupo.assinatura img { width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 0 18px -4px var(--marca-brilho); flex: none; }
   .grupo.assinatura div { display: flex; flex-direction: column; gap: 1px; font-size: var(--t5); color: var(--texto3); }
@@ -715,6 +734,15 @@
   .menu-palavra button:hover { background: var(--vidro2); }
 
   .ed-lado .cartao { padding: 14px; }
+  .ed-legenda { display: flex; flex-wrap: wrap; gap: 5px; max-height: 210px; overflow-y: auto; padding: 8px; border-radius: 10px; background: var(--superficie); border: 1px solid var(--linha); margin-top: 8px; }
+  .ed-legenda input.lw {
+    width: auto; min-width: 2ch; padding: 3px 7px; border-radius: 7px; font: inherit; font-size: var(--t5);
+    background: var(--vidro2); border: 1px solid var(--linha); color: var(--texto);
+  }
+  .ed-legenda input.lw:focus { border-color: var(--marca); outline: none; background: var(--marca-fundo2); }
+  .ed-legenda input.lw.mudou { border-color: rgba(226,194,122,.6); color: var(--amarelo); }
+  .ed-legenda input.lw.fora { opacity: .35; text-decoration: line-through; }
+  .ed-legenda .vazio-leg { font-size: var(--t6); color: var(--texto3); padding: 4px; }
   .ed-lado .cartao + .cartao { margin-top: 10px; }
   .ed-lado textarea { min-height: 58px; font-size: var(--t5); font-weight: 600; text-transform: uppercase; line-height: 1.35; }
   .nudge { display: flex; align-items: center; gap: 4px; margin-top: 7px; }
@@ -1327,6 +1355,20 @@
   </div>
   <div class="gaveta-corpo">
 
+    <div class="grupo" id="grupoPasta">
+      <h4><i data-lucide="hard-drive" class="i"></i> Onde salvar</h4>
+      <div class="pasta-atual"><b id="pastaAtual">...</b><span id="pastaLivre"></span></div>
+      <label class="rot">Escolha o disco</label>
+      <div class="discos" id="discos"></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px">
+        <button class="btn p" id="btnEscolherPasta"><i data-lucide="folder-search" class="i"></i> Escolher outra pasta</button>
+        <button class="btn p" id="btnAbrirPastaDados"><i data-lucide="folder-open" class="i"></i> Abrir</button>
+        <button class="btn p" id="btnPastaPadrao" title="Voltar pra pasta de sempre">Padrão</button>
+      </div>
+      <div class="pasta-status" id="pastaStatus"></div>
+      <div class="dica" style="margin-top:6px">Os cortes, os vídeos baixados e a gravação da live vão pra essa pasta. Trocar vale na hora; o que já foi salvo na pasta antiga continua lá.</div>
+    </div>
+
     <div class="grupo">
       <h4><i data-lucide="captions" class="i"></i> Legenda</h4>
       <div>
@@ -1462,6 +1504,16 @@
           <label class="rot" for="edGancho"><i data-lucide="type" class="i"></i> Texto que aparece na tela</label>
           <textarea id="edGancho" maxlength="90" placeholder="Sem texto na tela"></textarea>
           <div class="dica" style="margin-top:5px">Aparece nos primeiros 4 segundos. Deixe vazio pra tirar.</div>
+        </div>
+
+        <div class="cartao" data-so="clipe">
+          <label class="marcar">
+            <input type="checkbox" id="edLegendar">
+            <div><b>Legenda palavra por palavra</b><span>Embaixo do vídeo, com a palavra que está sendo dita em amarelo.</span></div>
+          </label>
+          <label class="rot" style="margin-top:12px"><i data-lucide="captions" class="i"></i> Corrigir a legenda</label>
+          <div class="ed-legenda" id="edLegenda"></div>
+          <div class="dica" style="margin-top:6px">Clique numa palavra e corrija. Apague o texto pra tirar a palavra da legenda. Vale quando refizer o clipe.</div>
         </div>
 
         <div class="cartao">
@@ -2248,7 +2300,58 @@
 
   // ------------------------------------------------------------ gaveta
   const abrir = (v) => { $('gaveta').classList.toggle('on', v); $('fundoGaveta').classList.toggle('on', v); };
-  $('btnAjustes').addEventListener('click', () => abrir(true));
+  $('btnAjustes').addEventListener('click', () => { abrir(true); carregarArmazenamento(); });
+
+  // ------------------------------------------------------------ onde salvar
+  let armazenamento = null;
+  function statusPasta(msg, tipo) { $('pastaStatus').textContent = msg || ''; $('pastaStatus').className = 'pasta-status' + (tipo ? ' ' + tipo : ''); }
+  function pintarArmazenamento() {
+    const a = armazenamento;
+    if (!a) return;
+    $('pastaAtual').textContent = a.pasta;
+    $('pastaLivre').textContent = a.livreGb != null ? a.livreGb.toLocaleString('pt-BR') + ' GB livres nesse disco' : '';
+    const raizAtual = String(a.pasta).slice(0, 3).toUpperCase();
+    $('discos').innerHTML = (a.discos || []).map((d) => {
+      const usado = d.totalGb ? Math.round(100 - (d.livreGb / d.totalGb) * 100) : 0;
+      const pouco = d.livreGb < 10;
+      return '<button type="button" data-raiz="' + esc(d.raiz) + '" aria-pressed="' + (d.raiz.toUpperCase() === raizAtual) + '" class="' + (pouco ? 'pouco' : '') + '">' +
+        '<b>' + esc(d.nome) + '</b><span>' + d.livreGb.toLocaleString('pt-BR') + ' GB livres' + (pouco ? ' · quase cheio' : '') + '</span>' +
+        '<span class="barra-disco"><i style="width:' + usado + '%"></i></span></button>';
+    }).join('') || '<span class="dica">Não consegui ler os discos.</span>';
+    $('btnEscolherPasta').hidden = !a.escolhaDialogo;
+  }
+  async function carregarArmazenamento() {
+    try { armazenamento = await fetch('/api/armazenamento').then((x) => x.json()); pintarArmazenamento(); } catch (_) {}
+  }
+  async function mudarPasta(corpo) {
+    statusPasta('Trocando...', '');
+    try {
+      const r = await postJson('/api/armazenamento', corpo);
+      if (r.erro) return statusPasta(r.erro, 'ruim');
+      armazenamento = r;
+      pintarArmazenamento();
+      statusPasta('Pronto! A partir de agora tudo vai pra ' + r.pasta, 'ok');
+      // a lista de projetos passa a mostrar os da pasta nova
+      if ($('projetos').classList.contains('on')) abrirProjetos();
+    } catch (_) { statusPasta('Não consegui falar com o programa.', 'ruim'); }
+  }
+  $('discos').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-raiz]');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    mudarPasta({ pasta: b.dataset.raiz + 'CortadorAutomatico' });
+  });
+  $('btnEscolherPasta').addEventListener('click', async () => {
+    statusPasta('Escolha a pasta na janela do Windows...', '');
+    try {
+      const r = await postJson('/api/armazenamento/escolher');
+      if (!r.pasta) return statusPasta('', '');
+      mudarPasta({ pasta: r.pasta });
+    } catch (_) { statusPasta('', ''); }
+  });
+  $('btnPastaPadrao').addEventListener('click', () => mudarPasta({ padrao: true }));
+  $('btnAbrirPastaDados').addEventListener('click', () => {
+    if (armazenamento) postJson('/api/abrir', { caminho: armazenamento.cortes }).catch(() => {});
+  });
   $('btnFechaGaveta').addEventListener('click', () => abrir(false));
   $('fundoGaveta').addEventListener('click', () => abrir(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
@@ -2574,7 +2677,7 @@
   function tirarVazio() { const v = $('avVazio'); if (v) v.remove(); }
 
   function mostrarClipeAoVivo(c, novo) {
-    const card = cartao(c, true);
+    const card = cartao(c, true, av.pasta);
     card.id = 'av-clipe-' + c.numero;
     const antes = document.getElementById('av-clipe-' + c.numero) || document.getElementById('fz-' + c.numero);
     $('avQtd').textContent = Math.max(Number($('avQtd').textContent) || 0, c.numero);
@@ -2890,7 +2993,7 @@
 
   // parcial = o clipe acabou de sair e o resto ainda esta sendo gerado. Ainda
   // nao da pra editar: o projeto so fica completo no disco no fim.
-  function cartao(c, parcial) {
+  function cartao(c, parcial, pastaDoClipe) {
     const div = document.createElement('div');
     div.className = 'clipe';
     div.dataset.numero = c.numero;
@@ -2900,8 +3003,10 @@
     const alts = (c.titulos || []).slice(1).map((x) =>
       '<button class="alt" data-copiar="' + esc(x.texto) + '">' + esc(x.texto) + '</button>').join('');
     const motivos = (c.motivos || []).slice(0, 4).map((m) => esc(m.fator)).join(' · ');
-    const editar = parcial ? '' : '<button class="btn p abrir-editor"' +
-      (podeEditar() ? '' : ' disabled title="' + esc(motivoSemEdicao()) + '"') +
+    // clipe da live: edita quando o original dele fica pronto (uns segundos depois)
+    const daLive = !!pastaDoClipe || !!c.fonte;
+    const editar = parcial && !daLive ? '' : '<button class="btn p abrir-editor"' +
+      (podeEditarClipe(c) ? '' : ' disabled title="' + esc(daLive ? 'Preparando a edição deste clipe... fica pronta uns segundos depois.' : motivoSemEdicao()) + '"') +
       '><i data-lucide="scissors" class="i"></i> Editar</button>';
 
     div.innerHTML =
@@ -2946,7 +3051,7 @@
     });
 
     const btnEditar = div.querySelector('.abrir-editor');
-    if (btnEditar) btnEditar.addEventListener('click', () => abrirEditor(c));
+    if (btnEditar) btnEditar.addEventListener('click', () => abrirEditor(c, pastaDoClipe || (projetoAtual && projetoAtual.pasta)));
     icones(div);
     return div;
   }
@@ -3262,6 +3367,9 @@
     janIni: 0, janFim: 0, palavras: [], pedido: 0,
     pararEm: null, arrasto: null, rodando: false, htmlMudancas: '',
     modoTrecho: 'melhores', qtd: 3, dur: '18-40',
+    pastaProj: null,   // pasta do projeto do clipe aberto (no ao vivo nao tem projetoAtual)
+    edicoes: {},       // correcoes da legenda: { "<inicio em centesimos>": "texto" }
+    assinaturaLegenda: '',
   };
   let palavraAtual = null, palavraDoMenu = null, ultimaEspiada = 0;
 
@@ -3280,19 +3388,35 @@
   const noTrilho = (t) => ((t - ed.janIni) / Math.max(0.001, ed.janFim - ed.janIni)) * 100;
   const fimDoVideo = () => ed.duracao || Infinity;
   const fonteQS = () => ed.fonte.pasta
-    ? 'pasta=' + encodeURIComponent(ed.fonte.pasta)
+    ? 'pasta=' + encodeURIComponent(ed.fonte.pasta) + (ed.fonte.clipe ? '&clipe=' + encodeURIComponent(ed.fonte.clipe) : '')
     : 'caminho=' + encodeURIComponent(ed.fonte.caminho);
   const duracaoTexto = (s) => (s < 60 ? emSegundos(s) : mmss(s));
   const arred = (t) => Math.round(t * 100) / 100;
 
-  function abrirEditor(c) {
-    if (!podeEditar()) return;
+  /** O clipe da live (com original proprio) edita sozinho; o de video gravado precisa do video do projeto. */
+  function podeEditarClipe(c) { return !!(c && c.fonte) || podeEditar(); }
+
+  /** @param {string} pasta  a pasta do projeto - no ao vivo, a da live (nao tem projetoAtual) */
+  function abrirEditor(c, pasta) {
+    if (!podeEditarClipe(c)) return;
     const p = projetoAtual;
+    const doClipe = !!c.fonte;
+    const pastaProj = pasta || (p && p.pasta);
+    const legendaDoProjeto = !!(p && p.pasta === pastaProj && p.opcoes && p.opcoes.legendar);
     Object.assign(ed, {
-      modo: 'clipe', contexto: 'projeto', fonte: { pasta: p.pasta },
-      duracao: p.duracaoVideo, outros: p.clipes, c: c,
-      base: { inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: c.gancho || '' },
+      modo: 'clipe', contexto: 'projeto',
+      fonte: doClipe ? { pasta: pastaProj, clipe: c.numero } : { pasta: pastaProj },
+      duracao: doClipe ? (c.fonte.duracao || 0) : p.duracaoVideo,
+      outros: doClipe ? [] : p.clipes, c: c, pastaProj: pastaProj,
+      edicoes: Object.assign({}, c.edicoesLegenda || {}),
+      assinaturaLegenda: '',
+      base: {
+        inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: c.gancho || '',
+        legendar: typeof c.legendar === 'boolean' ? c.legendar : legendaDoProjeto,
+        edicoes: JSON.stringify(c.edicoesLegenda || {}),
+      },
     });
+    $('edLegendar').checked = ed.base.legendar;
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     // folga dos dois lados: pra ver o que vem antes e depois, e ter onde esticar
@@ -3438,8 +3562,46 @@
     if (ed.modo !== 'clipe' || !ed.c) return false;
     return Math.abs(ed.inicio - ed.base.inicio) >= 0.05 ||
            Math.abs(ed.fim - ed.base.fim) >= 0.05 ||
-           $('edGancho').value.trim() !== ed.base.gancho.trim();
+           $('edGancho').value.trim() !== ed.base.gancho.trim() ||
+           $('edLegendar').checked !== ed.base.legendar ||
+           JSON.stringify(ed.edicoes) !== ed.base.edicoes;
   }
+
+  /**
+   * As palavras que caem dentro do corte, cada uma num campo pra corrigir.
+   * So redesenha quando muda o conjunto de palavras (arrastar o corte), nunca
+   * enquanto a pessoa digita - senao o campo perde o foco.
+   */
+  function pintarLegenda() {
+    if (!ed.aberto || ed.modo !== 'clipe') return;
+    const dentro = (ed.palavras || []).filter((w) => w.f > ed.inicio && w.i < ed.fim);
+    const assinatura = dentro.map((w) => Math.round(w.i * 100)).join(',');
+    if (assinatura === ed.assinaturaLegenda && $('edLegenda').childElementCount) return;
+    ed.assinaturaLegenda = assinatura;
+    if (!dentro.length) {
+      $('edLegenda').innerHTML = '<span class="vazio-leg">' + (ed.palavras.length ? 'Ninguém fala dentro do corte.' : 'Sem fala ouvida nesse trecho ainda.') + '</span>';
+      return;
+    }
+    $('edLegenda').innerHTML = dentro.map((w) => {
+      const chave = String(Math.round(w.i * 100));
+      const editado = Object.prototype.hasOwnProperty.call(ed.edicoes, chave);
+      const valor = editado ? ed.edicoes[chave] : w.t;
+      return '<input class="lw' + (editado ? (valor ? ' mudou' : ' mudou fora') : '') + '" data-chave="' + chave + '" data-orig="' + esc(w.t) +
+        '" value="' + esc(valor) + '" size="' + Math.max(2, String(valor || w.t).length) + '" spellcheck="false" aria-label="Palavra da legenda">';
+    }).join('');
+  }
+  $('edLegenda').addEventListener('input', (e) => {
+    const inp = e.target.closest('input.lw');
+    if (!inp) return;
+    const chave = inp.dataset.chave;
+    const v = inp.value;
+    if (v === inp.dataset.orig) delete ed.edicoes[chave]; else ed.edicoes[chave] = v.trim();
+    inp.size = Math.max(2, v.length);
+    inp.classList.toggle('mudou', v !== inp.dataset.orig);
+    inp.classList.toggle('fora', !v.trim());
+    pintarEditor();
+  });
+  $('edLegendar').addEventListener('change', () => pintarEditor());
 
   function pintarEditor() {
     if (!ed.aberto) return;
@@ -3496,6 +3658,7 @@
     if (ed.modo === 'clipe') {
       const mudou = mudouAlgo();
       $('edRefazer').disabled = !mudou || ed.rodando;
+      pintarLegenda();
       $('edDesfazer').disabled = !mudou || ed.rodando;
     } else {
       pintarBotaoTrecho();
@@ -3906,6 +4069,9 @@
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     $('edGancho').value = ed.base.gancho;
+    $('edLegendar').checked = ed.base.legendar;
+    ed.edicoes = JSON.parse(ed.base.edicoes || '{}');
+    ed.assinaturaLegenda = '';
     edVideo.pause();
     espiar(ed.inicio, true);
     pintarEditor();
@@ -3919,6 +4085,8 @@
 
   // Troca o cartao na lista - so se o projeto na tela ainda for o do clipe
   function trocarClipe(novo, pasta) {
+    const doAoVivo = document.getElementById('av-clipe-' + novo.numero);
+    if (doAoVivo && av.pasta === pasta) { const n = cartao(novo, true, pasta); n.id = doAoVivo.id; doAoVivo.replaceWith(n); }
     if (!projetoAtual || projetoAtual.pasta !== pasta) return;
     projetoAtual.clipes = projetoAtual.clipes.map((c) => (c.numero === novo.numero ? novo : c));
     const velho = $('listaClipes').querySelector('.clipe[data-numero="' + novo.numero + '"]');
@@ -3928,8 +4096,8 @@
   $('edRefazer').addEventListener('click', async () => {
     const c = ed.c;
     if (!c || ed.rodando) return;
-    const pasta = projetoAtual.pasta;
-    const mesmoClipe = () => ed.c && ed.c.numero === c.numero && projetoAtual && projetoAtual.pasta === pasta;
+    const pasta = ed.pastaProj;
+    const mesmoClipe = () => ed.c && ed.c.numero === c.numero && ed.pastaProj === pasta;
     const acabou = (msg, tipo) => {
       ed.rodando = false;
       if (mesmoClipe()) statusEditor(msg, tipo);
@@ -3950,6 +4118,8 @@
           inicio: arred(ed.inicio),
           duracao: Math.round((ed.fim - ed.inicio) * 10) / 10,
           gancho: $('edGancho').value.trim(),
+          legendar: $('edLegendar').checked,
+          edicoes: ed.edicoes,
         }),
       }).then((x) => x.json());
     } catch (_) {
@@ -3965,10 +4135,17 @@
         if (mesmoClipe()) {
           // o que acabou de ser gravado vira o novo "como esta no arquivo"
           ed.c = novo;
-          ed.base = { inicio: novo.inicio, fim: arred(novo.inicio + novo.duracao), gancho: novo.gancho || '' };
+          ed.base = {
+            inicio: novo.inicio, fim: arred(novo.inicio + novo.duracao), gancho: novo.gancho || '',
+            legendar: typeof novo.legendar === 'boolean' ? novo.legendar : $('edLegendar').checked,
+            edicoes: JSON.stringify(novo.edicoesLegenda || {}),
+          };
+          ed.edicoes = Object.assign({}, novo.edicoesLegenda || {});
+          ed.assinaturaLegenda = '';
           ed.inicio = ed.base.inicio;
           ed.fim = ed.base.fim;
           $('edGancho').value = ed.base.gancho;
+          $('edLegendar').checked = ed.base.legendar;
         }
         acabou('Pronto! O clipe ' + novo.numero + ' foi refeito — já está atualizado na lista e na pasta.', 'ok');
       },

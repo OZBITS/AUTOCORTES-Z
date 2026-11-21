@@ -363,7 +363,7 @@
   .modal.apoio-modal { background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(61,139,255,.18), transparent 70%), var(--superficie); }
   .pix { margin: 0 0 14px; padding: 14px 16px; border-radius: 14px; border: 1px dashed rgba(127,178,255,.4); background: var(--marca-fundo2); text-align: left; }
   .pix small { display: block; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--marca2); font-weight: 700; margin-bottom: 4px; }
-  .pix code { display: block; font: 650 15px/1.4 'Manrope', monospace; color: var(--texto); word-break: break-all; }
+  .pix code { display: block; font: 650 15px/1.4 'Manrope', monospace; color: var(--texto); word-break: break-all; cursor: text; user-select: all; -webkit-user-select: all; }
   [hidden] { display: none !important; }
   .modal .btn { white-space: normal; text-align: center; }
   .modal-fundo { overflow-y: auto; place-items: start center; }
@@ -869,7 +869,7 @@
   // Pra onde vai a doacao. Preencha um dos dois (ou os dois):
   //   pix:  a chave Pix (de preferencia a chave aleatoria)
   //   link: uma pagina de doacao (LivePix, Ko-fi, Buy Me a Coffee...)
-  var DOACAO = { pix: '', link: '' };
+  var DOACAO = { pix: 'e1b2fdbe-a651-4e7b-9a70-5d8c9cf25e9f', link: '' };
   var $ = function (id) { return document.getElementById(id); };
 
   function abrir(id) {
@@ -895,10 +895,34 @@
   // apoio: mostra o Pix e/ou o link que estiverem preenchidos
   if (DOACAO.pix) { $('apoioPix').hidden = false; $('apoioPixChave').textContent = DOACAO.pix; $('btnCopiarPix').hidden = false; }
   if (DOACAO.link) { $('btnApoioLink').hidden = false; $('btnApoioLink').href = DOACAO.link; }
+  // Seleciona a chave na tela (pra copiar na mao se o navegador nao deixar copiar sozinho)
+  function selecionarChave() {
+    try { var r = document.createRange(); r.selectNodeContents($('apoioPixChave')); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch (_) {}
+  }
+  // Jeito antigo de copiar, pra navegador que bloqueia o novo
+  function copiarAntigo(texto) {
+    try {
+      var t = document.createElement('textarea');
+      t.value = texto; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(t);
+      return ok;
+    } catch (_) { return false; }
+  }
+  $('apoioPixChave').addEventListener('click', selecionarChave);
   $('btnCopiarPix').addEventListener('click', function () {
     var b = this, antes = b.innerHTML;
-    var feito = function () { b.textContent = 'Chave copiada! Obrigado ❤'; setTimeout(function () { b.innerHTML = antes; }, 2200); };
-    if (navigator.clipboard) navigator.clipboard.writeText(DOACAO.pix).then(feito, feito); else feito();
+    var mostrar = function (msg) { b.textContent = msg; setTimeout(function () { b.innerHTML = antes; }, 2600); };
+    var copiou = function () { mostrar('Chave copiada! Obrigado ❤'); };
+    // so diz "copiada" se copiou de verdade; senao seleciona a chave pra copiar na mao
+    var falhou = function () {
+      if (copiarAntigo(DOACAO.pix)) return copiou();
+      selecionarChave();
+      mostrar('Selecionei a chave: segure e copie (ou Ctrl+C)');
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(DOACAO.pix).then(copiou, falhou);
+    else falhou();
   });
 
   // Quantas estrelas o projeto tem e qual e a versao mais nova (API publica do GitHub)

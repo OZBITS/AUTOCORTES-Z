@@ -1866,11 +1866,25 @@
     if (!videoDoEditor()) return;
     const seg = segundoDoSlider();
     $('tempoFrameTxt').textContent = duracaoVideo ? mmss(seg) : '–';
-    const r = await fetch('/api/frame', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ video: videoDoEditor(), segundo: seg, sid: idSessao }),
-    });
-    if (!r.ok) return erro(modoEditor === 'aovivo' ? 'Não consegui pegar a imagem da live. Tente "Pegar uma imagem mais nova".' : 'Não consegui ler uma imagem desse vídeo.');
+    let r;
+    if (modoEditor === 'aovivo') {
+      // Ao vivo: o programa tenta os pedacos mais novos ate um ter imagem
+      // legivel e diz qual foi - a previa usa o mesmo pedaco.
+      r = await fetch('/api/aovivo/quadro?t=' + Date.now());
+      if (!r.ok) {
+        let motivo = '';
+        try { motivo = (await r.json()).erro || ''; } catch (_) {}
+        return erro((motivo || 'Não consegui pegar a imagem da live.') + ' Espere uns segundos e clique em "Pegar uma imagem mais nova".');
+      }
+      const ped = r.headers.get('X-Pedaco');
+      if (ped) fonteAoVivo = decodeURIComponent(ped);
+    } else {
+      r = await fetch('/api/frame', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video: videoDoEditor(), segundo: seg, sid: idSessao }),
+      });
+      if (!r.ok) return erro('Não consegui ler uma imagem desse vídeo.');
+    }
 
     const img = $('frameImg');
     if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);

@@ -942,10 +942,16 @@ class SessaoAoVivo {
 
   /** Ultimo pedaco gravado - pra mostrar a imagem da live e marcar a webcam. */
   ultimoPedaco() {
-    for (let i = this.pedacos.length - 1; i >= 0; i--) {
-      if (fs.existsSync(this.pedacos[i].arquivo)) return this.pedacos[i].arquivo;
+    return this.ultimosPedacos(1)[0] || null;
+  }
+
+  /** Os N pedacos mais novos que ainda estao no disco, do mais novo pro mais velho. */
+  ultimosPedacos(n) {
+    const lista = [];
+    for (let i = this.pedacos.length - 1; i >= 0 && lista.length < n; i--) {
+      if (fs.existsSync(this.pedacos[i].arquivo)) lista.push(this.pedacos[i].arquivo);
     }
-    return null;
+    return lista;
   }
 
   parar(jaEncerrada) {

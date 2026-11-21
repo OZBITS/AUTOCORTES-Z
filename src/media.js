@@ -724,11 +724,16 @@ async function detectarWebcam(video, inicio, duracao, area) {
 /** Um frame cru do video, pro usuario marcar onde esta a webcam e o jogo. */
 async function gerarFrame(video, segundo, destino, largura) {
   const { ffmpeg } = await garantirFfmpeg();
-  await rodar(ffmpeg, [
-    '-y', '-ss', String(Math.max(0, segundo)), '-i', video,
-    '-frames:v', '1', '-vf', 'scale=' + (largura || 960) + ':-2,' + JPG_CHEIO,
-    '-q:v', '3', '-loglevel', 'error', destino,
-  ]);
+  const filtro = ['-frames:v', '1', '-vf', 'scale=' + (largura || 960) + ':-2,' + JPG_CHEIO, '-q:v', '3', '-loglevel', 'error', destino];
+  const saiu = () => { try { return fs.statSync(destino).size > 0; } catch (_) { return false; } };
+  try { fs.unlinkSync(destino); } catch (_) {}
+  try {
+    await rodar(ffmpeg, ['-y', '-ss', String(Math.max(0, segundo)), '-i', video].concat(filtro));
+  } catch (_) { /* tenta sem pular, abaixo */ }
+  // Pedaco de live que nao comeca num quadro-chave (gravacao pelo yt-dlp) ou
+  // mais curto que o segundo pedido: pega o primeiro quadro que der pra ler.
+  if (!saiu()) await rodar(ffmpeg, ['-y', '-i', video].concat(filtro));
+  if (!saiu()) throw new Error('nenhuma imagem nesse pedaço');
   return destino;
 }
 

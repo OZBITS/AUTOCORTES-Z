@@ -87,7 +87,11 @@ def main():
     # de comecar - numa maquina com pouca RAM livre o processo morre.
     pedacos = pedacos_do_wav(args.audio, args.duracao) if args.duracao > LIMITE_INTEIRO else None
     if pedacos is None:
-        segmentos_iter, info = modelo.transcribe(args.audio, **opcoes)
+        # O audio vai ja lido (numeros), e nao o caminho do arquivo: com o
+        # caminho o faster-whisper abre o arquivo pelo PyAV, e o PyAV 19 quebrou
+        # isso ("open() got an unexpected keyword argument 'metadata_errors'").
+        lido = ler_wav(args.audio)
+        segmentos_iter, info = modelo.transcribe(lido if lido is not None else args.audio, **opcoes)
         duracao = args.duracao or float(getattr(info, "duration", 0) or 0)
         idioma = getattr(info, "language", args.idioma)
         fontes = [(0.0, segmentos_iter, float("inf"))]
@@ -162,6 +166,23 @@ def mmss(s):
 LIMITE_INTEIRO = 40 * 60
 PEDACO = 10 * 60
 EMENDA = 8  # segundos que cada pedaco repete do anterior, pra nao cortar palavra
+
+
+def ler_wav(caminho):
+    """
+    O WAV inteiro (16 kHz mono, o que o programa grava) como numeros de -1 a 1,
+    do jeito que o faster-whisper aceita. Outro formato: None.
+    """
+    import wave
+    try:
+        with wave.open(caminho, "rb") as w:
+            if w.getnchannels() != 1 or w.getsampwidth() != 2 or w.getframerate() != 16000:
+                return None
+            bruto = w.readframes(w.getnframes())
+    except Exception:
+        return None
+    import numpy as np
+    return np.frombuffer(bruto, dtype=np.int16).astype(np.float32) / 32768.0
 
 
 def pedacos_do_wav(caminho, duracao):

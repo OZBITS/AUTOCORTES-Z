@@ -498,12 +498,22 @@ const servidor = http.createServer(async (req, res) => {
 
     // A imagem mais recente da live: previa e marcar onde esta a webcam
     if (rota === '/api/aovivo/quadro') {
-      const ped = aoVivoAtual && aoVivoAtual.ultimoPedaco();
-      if (!ped) { res.writeHead(404); return res.end(); }
+      const pedacos = aoVivoAtual ? aoVivoAtual.ultimosPedacos(5) : [];
+      if (!pedacos.length) return json(res, 404, { erro: 'Ainda não tem nenhum pedaço da live gravado.' });
       fs.mkdirSync(TRABALHO, { recursive: true });
       const alvo = path.join(TRABALHO, 'aovivo-quadro.jpg');
-      try { await media.gerarFrame(ped, 1, alvo, 960); } catch (_) { res.writeHead(404); return res.end(); }
-      return enviarImagem(res, alvo);
+      // Um pedaco pode nao ter imagem legivel (comecou no meio de um quadro):
+      // tenta os mais novos ate um dar certo, e diz qual foi - o editor usa
+      // esse mesmo pedaco pra previa.
+      let motivo = '';
+      for (const ped of pedacos) {
+        try {
+          await media.gerarFrame(ped, 0.5, alvo, 960);
+          res.setHeader('X-Pedaco', encodeURIComponent(ped));
+          return enviarImagem(res, alvo);
+        } catch (e) { motivo = (e.message || String(e)).split(/\r?\n/).filter(Boolean).pop() || ''; }
+      }
+      return json(res, 502, { erro: 'Não consegui ler a imagem da live (' + motivo.slice(0, 160) + ').' });
     }
 
     // Previa do enquadramento em cima da imagem da live

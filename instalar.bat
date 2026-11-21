@@ -70,7 +70,9 @@ if not exist "%~dp0ambiente\Scripts\python.exe" "%PY%" -m venv "%~dp0ambiente"
 set "VPY=%~dp0ambiente\Scripts\python.exe"
 if not exist "%VPY%" goto semvenv
 "%VPY%" -m pip install --upgrade pip
-"%VPY%" -m pip install faster-whisper
+rem Versoes fixas, as mesmas do instalador .exe: biblioteca nova as vezes
+rem quebra a transcricao (o PyAV 19 quebrou o faster-whisper em nov/2026).
+"%VPY%" -m pip install faster-whisper==1.2.1 av==18.1.0 ctranslate2==4.8.2
 if errorlevel 1 goto sempip
 
 echo.

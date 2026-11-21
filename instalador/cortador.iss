@@ -3,7 +3,7 @@
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
 #define Nome "Cortador Automático"
-#define Versao "2.0.5"
+#define Versao "2.0.6"
 #define Marca "Gabriel Workspace"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM

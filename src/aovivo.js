@@ -883,6 +883,13 @@ class SessaoAoVivo {
       tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
       segundosPraFicarPronto: Math.round((Date.now() - t0) / 100) / 10,
     };
+    // titulo com SEO na hora (streamer + jogo + o que aconteceu), sem esperar a
+    // fala: assim o clipe ja sai pronto pra postar. Melhora quando a fala chega.
+    try {
+      const cp = gerarCopy({ texto: '', inicio: pedido.inicio, motivos: pedido.motivos, origem: pedido.origem },
+        { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) }, sessoes.pegar());
+      if (cp && cp.titulo) { clipe.titulo = cp.titulo; clipe.titulos = cp.titulos; clipe.hashtags = cp.hashtags; this.titulosUsados.add(cp.titulo.toLowerCase()); }
+    } catch (_) { /* fica o titulo simples */ }
     clipe.legendaPost = clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' ');
     this.clipes.push(clipe);
     this.gravarRelatorio();
@@ -967,9 +974,12 @@ class SessaoAoVivo {
           .filter((p) => p.fim > offset && p.inicio < offset + clipe.duracao);
         const texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
         clipe.texto = texto;
-        if (this.sugerirTitulo && texto.length > 8) {
-          const cp = gerarCopy({ texto, inicio: offset, tags: [] }, (this.titulo || ''), sessoes.pegar());
+        if (this.sugerirTitulo) {
+          const cp = gerarCopy({ texto, inicio: offset, tags: [], palavras, motivos: clipe.motivos, origem: clipe.origem },
+            { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) }, sessoes.pegar());
+          if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
           clipe.titulo = cp.titulo;
+          this.titulosUsados.add(String(cp.titulo).toLowerCase());
           clipe.titulos = cp.titulos;
           clipe.hashtags = cp.hashtags;
           clipe.legendaPost = cp.legenda;

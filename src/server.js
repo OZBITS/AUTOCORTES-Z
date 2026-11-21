@@ -617,6 +617,14 @@ const servidor = http.createServer(async (req, res) => {
         : baixador.baixar(url, { limiteAltura: Number(corpo.limiteAltura) }, aoProgredir);
 
       baixando
+        .then(async (caminho) => {
+          // canal e titulo do link, pro titulo dos cortes sair com o nome do streamer e do jogo
+          try {
+            const info = await baixador.espiar(url);
+            fs.writeFileSync(caminho + '.cortador.json', JSON.stringify({ titulo: info.titulo, canal: info.canal, url }), 'utf8');
+          } catch (_) { /* sem isso o titulo so perde o nome do canal */ }
+          return caminho;
+        })
         .then((caminho) => emitir(id, { tipo: 'baixado', caminho }))
         .catch((e) => emitir(id, { tipo: 'erro', msg: e.message || String(e) }));
       return;
@@ -878,7 +886,8 @@ const servidor = http.createServer(async (req, res) => {
     if (rota === '/api/desempenho' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
       try {
-        desempenho.definir(corpo.modo);
+        if (corpo.modo) desempenho.definir(corpo.modo);
+        if (typeof corpo.placa === 'boolean') desempenho.definirPlaca(corpo.placa);
         return json(res, 200, desempenho.resumo());
       } catch (e) {
         return json(res, 400, { erro: e.message });
@@ -982,4 +991,6 @@ function abrirJanela(endereco) {
 }
 
 aovivo.limparSobras();
+// testa a placa de video em segundo plano (meio segundo de video), pra opcao dos Ajustes
+media.garantirFfmpeg().then(({ ffmpeg }) => desempenho.detectarPlaca(ffmpeg)).catch(() => {});
 subir(PORTA_INICIAL, 20);

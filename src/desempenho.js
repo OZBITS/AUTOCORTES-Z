@@ -84,8 +84,93 @@ function argsDoFfmpeg(args) {
   return novo;
 }
 
-function resumo() {
-  return { modo: modo(), escolhido: escolhido(), recomendado: recomendado(), pc: pc() };
+// ---------------------------------------------------------------- placa de video
+//
+// Gerar o corte (recodificar o video) e a parte pesada do fim. A placa de video
+// faz isso bem mais rapido que o processador: NVIDIA (NVENC), AMD (AMF) ou Intel
+// (Quick Sync). A transcricao continua no processador.
+
+const PLACAS = [
+  { encoder: 'h264_nvenc', nome: 'NVIDIA' },
+  { encoder: 'h264_amf', nome: 'AMD' },
+  { encoder: 'h264_qsv', nome: 'Intel' },
+];
+let placaAchada; // undefined = ainda nao testou; null = nenhuma funcionou
+let testando = null;
+let placaQuebrou = false; // falhou num corte de verdade: volta pro processador ate fechar
+
+/** Testa de verdade (um video de meio segundo) qual placa o ffmpeg consegue usar. */
+function detectarPlaca(ffmpeg) {
+  if (placaAchada !== undefined) return Promise.resolve(placaAchada);
+  if (testando) return testando;
+  const { spawn } = require('child_process');
+  const testar = (p) => new Promise((ok) => {
+    const proc = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=640x360:r=30:d=0.5',
+      '-c:v', p.encoder, '-pix_fmt', p.encoder === 'h264_qsv' ? 'nv12' : 'yuv420p', '-f', 'null', '-'], { windowsHide: true });
+    const relogio = setTimeout(() => { try { proc.kill(); } catch (_) {} ok(false); }, 15000);
+    proc.on('error', () => { clearTimeout(relogio); ok(false); });
+    proc.on('close', (code) => { clearTimeout(relogio); ok(code === 0); });
+  });
+  testando = (async () => {
+    for (const p of PLACAS) if (await testar(p)) { placaAchada = p; return p; }
+    placaAchada = null;
+    return null;
+  })();
+  return testando;
 }
 
-module.exports = { modo, escolhido, definir, pc, recomendado, nucleos, aliviar, argsDoFfmpeg, resumo };
+function placaLigada() { return !!pastas.lerConfig().placaVideo; }
+function definirPlaca(ligada) {
+  const cfg = pastas.lerConfig();
+  cfg.placaVideo = !!ligada;
+  pastas.gravarConfig(cfg);
+  placaQuebrou = false;
+  return cfg.placaVideo;
+}
+function marcarPlacaQuebrada() { placaQuebrou = true; }
+
+/** Troca o libx264 pelo encoder da placa, mantendo a mesma qualidade (crf). */
+function paraPlaca(args) {
+  const p = placaAchada;
+  const i = args.indexOf('libx264');
+  if (!p || i < 1 || args[i - 1] !== '-c:v') return null;
+  const tirar = new Set(['-preset', '-crf', '-profile:v', '-level', '-x264-params', '-tune', '-threads']);
+  const crfIdx = args.indexOf('-crf');
+  const crf = crfIdx >= 0 ? String(args[crfIdx + 1]) : '20';
+  const novo = [];
+  for (let k = 0; k < args.length; k++) {
+    if (tirar.has(args[k])) { k++; continue; }
+    if (k === i - 1) continue; // o '-c:v' antigo
+    if (k === i) {
+      if (p.encoder === 'h264_nvenc') novo.push('-c:v', 'h264_nvenc', '-preset', 'p5', '-rc', 'vbr', '-cq', crf, '-b:v', '0', '-profile:v', 'high');
+      else if (p.encoder === 'h264_amf') { const qp = String(Number(crf) + 3); novo.push('-c:v', 'h264_amf', '-quality', 'quality', '-rc', 'cqp', '-qp_i', qp, '-qp_p', qp, '-qp_b', qp); }
+      else novo.push('-c:v', 'h264_qsv', '-global_quality', crf, '-preset', 'medium');
+      continue;
+    }
+    novo.push(args[k]);
+  }
+  if (p.encoder === 'h264_qsv') { const f = novo.indexOf('-pix_fmt'); if (f >= 0) novo[f + 1] = 'nv12'; }
+  return novo;
+}
+
+/**
+ * Os argumentos do ffmpeg ja ajustados: placa de video (se ligada e funcionando)
+ * ou o processador com o modo leve/total. placa=true avisa quem chama que, se
+ * der erro, vale tentar de novo no processador.
+ */
+function adaptarFfmpeg(args) {
+  if (placaLigada() && !placaQuebrou && placaAchada) {
+    const naPlaca = paraPlaca(args);
+    if (naPlaca) return { args: naPlaca, placa: true };
+  }
+  return { args: argsDoFfmpeg(args), placa: false };
+}
+
+function resumo() {
+  return {
+    modo: modo(), escolhido: escolhido(), recomendado: recomendado(), pc: pc(),
+    placa: { ligada: placaLigada(), achada: placaAchada === undefined ? 'testando' : (placaAchada ? placaAchada.nome : null), quebrou: placaQuebrou },
+  };
+}
+
+module.exports = { modo, escolhido, definir, pc, recomendado, nucleos, aliviar, argsDoFfmpeg, adaptarFfmpeg, detectarPlaca, definirPlaca, marcarPlacaQuebrada, resumo };

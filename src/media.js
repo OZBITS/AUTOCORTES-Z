@@ -61,8 +61,18 @@ async function garantirFfmpeg() {
 
 function rodar(cmd, args, opcoes) {
   opcoes = opcoes || {};
-  // modo leve: menos nucleos pra recodificar e prioridade baixa
-  args = desempenho.argsDoFfmpeg(args);
+  // placa de video (se ligada) ou processador no modo leve/total
+  const ajuste = desempenho.adaptarFfmpeg(args);
+  if (!ajuste.placa) return rodarUma(cmd, ajuste.args, opcoes);
+  // na placa: se ela falhar nesse corte, refaz no processador sem a pessoa perceber
+  return rodarUma(cmd, ajuste.args, opcoes).catch((e) => {
+    desempenho.marcarPlacaQuebrada();
+    console.error('[placa de video] falhou, voltando pro processador:', String(e.message).slice(0, 300));
+    return rodarUma(cmd, desempenho.argsDoFfmpeg(args), opcoes);
+  });
+}
+
+function rodarUma(cmd, args, opcoes) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { windowsHide: true, cwd: opcoes.cwd });
     desempenho.aliviar(p);

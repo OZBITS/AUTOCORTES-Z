@@ -249,6 +249,37 @@ function energiaDaJanela(energia, inicio, fim) {
 
 // ---------------------------------------------------------------- nota
 
+// Fatores que dependem do que foi DITO - em live de jogo valem pela confianca da fala
+const FATORES_DA_FALA = new Set([
+  'Gancho nos 3 primeiros segundos', 'Abre com impacto', 'Abre direto no gancho', 'Gancho logo no comeco',
+  'Promete revelar algo', 'Tem virada de raciocinio', 'Traz numero / resultado concreto', 'Carga emocional alta',
+  'Faz pergunta pro espectador', 'Conta historia pessoal', 'Entrega algo aplicavel', 'Termina puxando resposta',
+  'Termina com impacto',
+]);
+const RISADA_JOGO = /\b(k{3,}\w*|(?:ha){2,}h?|(?:he){3,}|rs(?:rs)+|risos?)\b/i;
+const LANCE_DE_JOGO = [
+  /\b(ace|clutch|headshot|na cabe[cç]a|matei|matou|amassei|amassou|limpei|limpou)\b/i,
+  /\b(ganhamos|ganhei|vit[oó]ria|booyah|virada|virou)\b/i,
+  /\b(morri|morreu|perdemos|tiltei|me ferrei|deu ruim)\b/i,
+  /\b(fugi|fugiu|escapei|escapou|policia|procurado|estrela)\b/i,
+  /\b(chefe|boss|drop|dropou|lend[aá]rio|loot)\b/i,
+  /\b(um contra|1v[1-5]|quadra|penta|triple)\b/i,
+];
+
+/** Quantos segundos do trecho estao no volume mais alto da live (10% mais altos). */
+function segundosNoAlto(energia, inicio, fim) {
+  if (!energia || energia.length < 30) return 0;
+  if (energia._p90 == null) {
+    const ord = energia.slice().sort((a, b) => a - b);
+    Object.defineProperty(energia, '_p90', { value: ord[Math.floor(ord.length * 0.9)] || 1, enumerable: false });
+  }
+  let n = 0;
+  for (let s = Math.max(0, Math.floor(inicio)); s < Math.min(energia.length, Math.ceil(fim)); s++) {
+    if (energia[s] >= energia._p90 && energia[s] > 0.2) n++;
+  }
+  return n;
+}
+
 function pontuar(janela, energia, perfil, sessao) {
   const texto = janela.texto;
   const primeira = janela.frases[0].texto;
@@ -497,6 +528,42 @@ function pontuar(janela, energia, perfil, sessao) {
     motivos.push({ fator: 'Audio confuso nesse trecho', pontos: -6 });
   }
 
+  // ---- live de jogo (perfil automatico e de reacao) ----
+  // O que vale num corte de jogo e o que ACONTECE (risada, grito, o lance), nao
+  // a frase bonita. E com o som do jogo por cima a transcricao erra: uma frase
+  // embaralhada nao pode ganhar ponto de "gancho" por acaso.
+  if (perfil !== 'fala') {
+    // 1. os pontos que vem da fala valem proporcionalmente ao quanto da pra confiar nela
+    const fatorConf = Math.max(0.25, Math.min(1, (confMedia - 0.45) / 0.3));
+    if (fatorConf < 1) {
+      const daFala = motivos.filter((m) => m.pontos > 0 && FATORES_DA_FALA.has(m.fator));
+      const corte = Math.round(daFala.reduce((s, m) => s + m.pontos, 0) * (1 - fatorConf));
+      if (corte > 0) {
+        nota -= corte;
+        daFala.forEach((m) => { m.pontos = Math.round(m.pontos * fatorConf); });
+      }
+    }
+    // 2. risada (o Whisper escreve "kkkk", "hahaha")
+    if (RISADA_JOGO.test(texto)) {
+      nota += 9;
+      motivos.push({ fator: 'Tem risada', pontos: 9 });
+    }
+    // 3. grito: segundos no volume mais alto da live inteira (nao so do trecho)
+    const alto = segundosNoAlto(energia, janela.inicio, janela.fim);
+    if (alto >= 1) {
+      const p = Math.min(10, 4 + alto * 2);
+      nota += p;
+      motivos.push({ fator: 'Grito / volume no alto da live', pontos: p });
+    }
+    // 4. vocabulario de jogo (so com fala confiavel)
+    const lance = fatorConf >= 0.6 ? contar(texto, LANCE_DE_JOGO) : 0;
+    if (lance > 0) {
+      const p = Math.min(10, 4 + lance * 3);
+      nota += p;
+      motivos.push({ fator: 'Tem lance de jogo', pontos: p });
+    }
+  }
+
   // Comprime a faixa alta em vez de cortar em 100: senao varios trechos bons
   // empatam no teto e o ranking, que e o ponto do sistema, perde o sentido.
   if (nota > 82) nota = 82 + (nota - 82) * 0.38;
@@ -517,8 +584,8 @@ function pontuar(janela, energia, perfil, sessao) {
 // Quanto o acontecimento pesa em relacao ao que foi dito.
 const PESO_DO_PERFIL = {
   fala: 0.35,      // aula, podcast, review falado: o argumento e o produto
-  reacao: 1.15,    // abertura, sorteio, susto: a revelacao e o produto
-  auto: 1.0,
+  reacao: 1.5,     // abertura, sorteio, susto: a revelacao e o produto
+  auto: 1.4,       // live de jogo: o lance (voz + imagem) pesa mais que a frase
 };
 
 /**

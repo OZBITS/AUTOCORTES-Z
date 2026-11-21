@@ -8,6 +8,27 @@
  * superlativo, uma reacao - e monta a frase em cima disso.
  */
 
+const jogo = require('./jogo');
+
+/**
+ * O contexto do video: o texto (titulo da live, nome do arquivo) e o canal.
+ * Aceita string (jeito antigo) ou { texto, canal }.
+ */
+function lerContexto(contexto) {
+  if (contexto && typeof contexto === 'object') return { texto: String(contexto.texto || ''), canal: contexto.canal || '' };
+  return { texto: String(contexto || ''), canal: '' };
+}
+
+/** Live de jogo (com streamer ou jogo reconhecido, fora o publico infantil)? */
+function infoDeJogo(corte, contexto) {
+  const ctx = lerContexto(contexto);
+  const j = jogo.detectarJogo(ctx.texto, corte && corte.texto);
+  const streamer = jogo.nomeDoStreamer(ctx.canal);
+  if (j && j.kids) return null;
+  if (!j && !streamer) return null;
+  return { jogo: j ? j.nome : null, tagsJogo: j ? j.tags : [], streamer, canal: ctx.canal };
+}
+
 // ---------------------------------------------------------------- vocabulario
 
 const PARADA = new Set([
@@ -179,6 +200,7 @@ function escolherVariante(lista, semente) {
  * @returns {string} gancho curto pronto pra queimar na tela
  */
 function gerarGanchoDeTela(corte, sessao, nome) {
+  if (corte.contextoJogo && infoDeJogo(corte, corte.contextoJogo)) return jogo.ganchoDeJogo(corte);
   const texto = String(corte.texto || '');
   const obj = objetoDoTrecho(texto);
   const numeros = extrairNumeros(texto);
@@ -380,8 +402,22 @@ const MAX_HASHTAGS = 8;
  * realmente assiste esse tipo de conteudo.
  */
 function gerarHashtags(corte, contextoDoVideo, sessao, obrigatorias, nome) {
-  const texto = (corte.texto || '') + ' ' + (contextoDoVideo || '');
+  const ctx = lerContexto(contextoDoVideo);
+  const texto = (corte.texto || '') + ' ' + ctx.texto;
   const tags = EH_GTA.test(texto.replace(/[_-]+/g, ' ')) ? TAGS_GTA.slice() : [];
+  // live de jogo: o jogo e o streamer sao o que a busca procura
+  const info = infoDeJogo(corte, contextoDoVideo);
+  if (info) {
+    // live de jogo: so o jogo, o streamer e as de alcance. Palavra solta da fala
+    // (que com o som do jogo vem embaralhada) virava hashtag sem sentido.
+    const soJogo = info.tagsJogo.slice();
+    const doCanal = String(info.canal || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (doCanal.length >= 3) soJogo.push(doCanal);
+    soJogo.push('cortes');
+    const unicas = [];
+    for (const t of soJogo.concat(ALCANCE)) { if (t && !unicas.includes(t)) unicas.push(t); if (unicas.length >= MAX_HASHTAGS) break; }
+    return unicas;
+  }
 
   for (const [re, lista] of JOGOS) {
     if (re.test(texto)) { tags.push.apply(tags, lista); break; }
@@ -421,7 +457,15 @@ function montarLegenda(titulo, hashtags) {
  */
 function gerarCopy(corte, contextoDoVideo, sessao, nome) {
   sessao = sessao || {};
-  const titulos = gerarTitulos(corte);
+  const info = infoDeJogo(corte, contextoDoVideo);
+  let titulos;
+  if (info) {
+    const fortes = frasesFortes(corte.texto || '');
+    titulos = jogo.titulosDeJogo(corte, info, { fraseForte: fortes.length ? fortes[0].texto : null, evitar: contextoDoVideo && contextoDoVideo.evitar }).titulos;
+    if (!titulos.length) titulos = gerarTitulos(corte);
+  } else {
+    titulos = gerarTitulos(corte);
+  }
   const hashtags = gerarHashtags(corte, contextoDoVideo, sessao.id, sessao.hashtagsObrigatorias, nome);
   return {
     titulos,
@@ -432,4 +476,4 @@ function gerarCopy(corte, contextoDoVideo, sessao, nome) {
   };
 }
 
-module.exports = { gerarCopy, gerarTitulos, gerarHashtags, montarLegenda, gerarGanchoDeTela };
+module.exports = { gerarCopy, gerarTitulos, gerarHashtags, montarLegenda, gerarGanchoDeTela, infoDeJogo };

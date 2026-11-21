@@ -1466,6 +1466,10 @@
         <button class="dsp-op" type="button" data-dsp="total"><span class="dsp-tit"><i data-lucide="zap" class="i"></i> Processador total</span><p>Quase todo o processador. Mais rápido. Pra 16 GB de RAM ou mais e 6+ núcleos.</p></button>
       </div>
       <div class="dica" style="margin-top:8px" id="dspAjustesDica"></div>
+      <label class="marcar" style="margin-top:12px">
+        <input type="checkbox" id="placaVideo">
+        <div><b>Usar a placa de vídeo pra gerar os cortes</b><span id="placaDica">Procurando a placa de vídeo...</span></div>
+      </label>
     </div>
 
     <div class="grupo">
@@ -2430,7 +2434,26 @@
       '<span><b>' + (pc.nucleos || '?') + '</b> núcleos</span>' + (ram ? '<span><b>' + ram + '</b></span>' : '');
     $('dspAjustesDica').textContent = 'Seu PC: ' + (pc.nucleos || '?') + ' núcleos, ' + ram + '. Recomendado: ' +
       (r.recomendado === 'leve' ? 'modo leve' : 'processador total') + '. Vale a partir do próximo corte.';
+    pintarPlaca(r.placa || {});
   }
+  // placa de video: o programa testa sozinho qual funciona (NVIDIA, AMD ou Intel)
+  function pintarPlaca(p) {
+    const caixa = $('placaVideo');
+    caixa.checked = !!p.ligada;
+    caixa.disabled = p.achada === null;
+    $('placaDica').textContent =
+      p.achada === 'testando' ? 'Testando a placa de vídeo...'
+      : p.achada === null ? 'Não achei placa compatível (NVIDIA, AMD ou Intel): os cortes ficam no processador.'
+      : p.quebrou ? 'A placa ' + p.achada + ' falhou num corte e o programa voltou pro processador. Desligue e ligue de novo pra tentar outra vez.'
+      : 'Encontrei a placa ' + p.achada + '. Gera os cortes até 3x mais rápido; a transcrição continua no processador.';
+    if (p.achada === 'testando') setTimeout(carregarDesempenho, 2000);
+  }
+  $('placaVideo').addEventListener('change', async () => {
+    try {
+      const r = await (await fetch('/api/desempenho', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ placa: $('placaVideo').checked }) })).json();
+      if (!r.erro) pintarPlaca(r.placa || {});
+    } catch (_) {}
+  });
   async function carregarDesempenho(primeiraVez) {
     try {
       const r = await (await fetch('/api/desempenho')).json();

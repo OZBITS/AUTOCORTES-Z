@@ -169,6 +169,26 @@ ele reaproveita a transcrição e fica quase instantâneo — bom pra
 testar outro formato ou outra quantidade de cortes.
 
 
+PLACA DE VÍDEO (gerar os cortes mais rápido)
+--------------------------------------------
+
+Em Ajustes > "Uso do processador" tem "Usar a placa de vídeo pra gerar
+os cortes". O programa testa sozinho se o seu PC tem placa NVIDIA, AMD
+ou Intel que funcione. Ligado, os cortes ficam prontos até 3x mais
+rápido. A transcrição continua no processador. Se a placa falhar num
+corte, ele é refeito no processador sem você precisar fazer nada.
+
+
+TÍTULOS E GANCHOS DOS CORTES DE JOGO
+------------------------------------
+
+Em live de jogo o título sai no formato que a busca entende: o nome do
+streamer + o jogo + o que aconteceu ("Fulano não aguentou de rir nessa
+no Valorant"). O jogo vem do título da live; o streamer, do canal.
+Quando a fala vem embaralhada pelo som do jogo, ele não usa a frase
+quebrada. Na escolha dos momentos pesam mais a risada, o grito e o
+pico de reação do que a frase bonita. Dá pra trocar tudo no editor.
+
 O YOUTUBE PEDIU LOGIN ("confirme que não é um robô")
 -------------------------------------------------
 

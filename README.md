@@ -85,6 +85,9 @@ usa.
 - Autor e aprovador das versões: Gabriel Workspace ([gabrielworkspace](https://github.com/gabrielworkspace) no GitHub, [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/) no Instagram)
 - Os instaladores publicados são montados só pelo GitHub Actions deste
   repositório, a partir do código público.
+- O instalador usa a SignPath Foundation pra assinatura de código.
+  Free code signing provided by [SignPath.io](https://signpath.io/),
+  certificate by [SignPath Foundation](https://signpath.org/).
 
 ## Licença
 

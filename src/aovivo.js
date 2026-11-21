@@ -122,6 +122,19 @@ function motivoDaFalha(bruto) {
 }
 
 async function resolverAoVivo(url) {
+  // YouTube pedindo "confirme que nao e um robo": tenta de novo com o login do navegador
+  const extras = [[]].concat(/youtube\.com|youtu\.be/i.test(String(url))
+    ? [['--cookies-from-browser', 'firefox'], ['--cookies-from-browser', 'edge'], ['--cookies-from-browser', 'chrome']]
+    : []);
+  let ultimo = null;
+  for (const e of extras) {
+    try { return await resolverAoVivoUma(url, e); }
+    catch (err) { ultimo = err; if (!/sign in|not a bot|confirm/i.test(err.message)) throw err; }
+  }
+  throw new Error('O YouTube pediu pra confirmar que não é um robô. Abra o YouTube no Firefox, Edge ou Chrome, entre na sua conta e tente de novo.');
+}
+
+async function resolverAoVivoUma(url, extras) {
   const bin = await baixador.garantirYtDlp();
   return new Promise((resolve, reject) => {
     const p = spawn(bin, [
@@ -131,8 +144,7 @@ async function resolverAoVivo(url) {
       '-f', 'b[height<=1080][fps<=60]/bv*[height<=1080][fps<=60]+ba/bv*[height<=1080]+ba/b/bv*+ba',
       '--print', '%(is_live)s\t%(uploader)s\t%(title)s',
       '--print', 'urls',
-      url,
-    ], { windowsHide: true });
+    ].concat(extras || [], [url]), { windowsHide: true });
     let saida = '';
     let erro = '';
     const relogio = setTimeout(() => { try { p.kill(); } catch (_) {} }, 60000);
@@ -822,7 +834,7 @@ class SessaoAoVivo {
           '-i', junto, '-t', dur.toFixed(3),
           '-filter_complex', fs2, '-map', '[v]', '-map', '0:a?',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
-          '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
+          '-af', 'aresample=async=1:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       } else {
         // sem mexer na imagem, mas recodificando: copiar (-c copy) so comeca num
         // quadro-chave, e o clipe saia ate alguns segundos antes do lance e mais
@@ -830,7 +842,7 @@ class SessaoAoVivo {
         args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
           '-t', dur.toFixed(3), '-map', '0:v:0', '-map', '0:a?',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-          '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
+          '-af', 'aresample=async=1:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       }
       args.push('-movflags', '+faststart', mp4);
       await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });

@@ -355,6 +355,12 @@ async function cortarClipe(o) {
 
   const q = perfilDeQualidade(o.qualidade);
 
+  // O som comeca exatamente no zero, junto com a imagem: se o trecho tiver um vao
+  // no comeco do audio (live gravada da Twitch/Kick as vezes tem), vira silencio.
+  // Sem isso o arquivo dependia de "edit list", que o TikTok e o CapCut ignoram -
+  // e a voz saia fora de tempo la (medido: 0,19s num clipe de VOD da Twitch).
+  if (!teaser && o.temAudio !== false) args.push('-af', 'aresample=async=1:first_pts=0');
+
   args.push(
     '-c:v', 'libx264', '-preset', q.preset, '-crf', q.crf,
     '-pix_fmt', 'yuv420p',

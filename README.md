@@ -93,3 +93,7 @@ usa.
 
 [MIT](LICENSE). O instalador inclui programas de terceiros, cada um com a sua
 licença: Node.js, Python, faster-whisper, ffmpeg e yt-dlp.
+
+O nome "Cortador Automático", o nome "Gabriel Workspace" e o logo **não fazem
+parte da licença**: versões feitas a partir deste código precisam de outro nome
+e outro logo. Detalhes em [MARCA.md](MARCA.md).

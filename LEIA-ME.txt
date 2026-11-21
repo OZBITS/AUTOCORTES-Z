@@ -169,6 +169,23 @@ ele reaproveita a transcrição e fica quase instantâneo — bom pra
 testar outro formato ou outra quantidade de cortes.
 
 
+O YOUTUBE PEDIU LOGIN ("confirme que não é um robô")
+-------------------------------------------------
+
+Às vezes o YouTube pede essa confirmação. O programa tenta outros
+caminhos sozinho e, se precisar, usa o login que você já tem no
+navegador (Firefox, Edge ou Chrome) só pra baixar, aqui no seu PC.
+Se continuar: abra o YouTube no navegador, entre na sua conta e tente
+de novo. Ou baixe o vídeo por fora e use "Arquivo do PC".
+
+
+A IA PODE COMETER FALHAS
+------------------------
+
+A legenda, os títulos e a escolha dos momentos são feitos por IA e
+podem ter erros, principalmente com o som do jogo alto por cima da
+voz. Confira antes de postar: no editor dá pra corrigir tudo.
+
 MODO LEVE OU PROCESSADOR TOTAL
 ------------------------------
 

@@ -806,6 +806,15 @@
 .dsp-mini { display: grid; gap: 8px; }
 .dsp-mini .dsp-op { padding: 12px 14px; gap: 4px; }
 .dsp-mini .dsp-op .dsp-tit { font-size: 14.5px; }
+
+/* ---------- aviso: a IA pode cometer falhas */
+.aviso-ia { display: flex; align-items: center; gap: 9px; padding: 9px 13px; border-radius: 11px; border: 1px solid rgba(226,194,122,.28);
+  background: rgba(226,194,122,.06); color: var(--texto2); font-size: var(--t5); line-height: 1.4; }
+.aviso-ia .i { color: var(--amarelo); flex: none; }
+.aviso-ia b { color: var(--texto); font-weight: 650; }
+#resultado > .aviso-ia { margin: 0 0 14px; }
+.av-titulo-clipes + .aviso-ia { margin: 0 0 12px; }
+.assinatura .ia { font-size: var(--t6); color: var(--texto3); margin-top: 4px; }
 </style>
 </head>
 <body data-modo="fluxo">
@@ -1242,6 +1251,7 @@
       </div>
 
       <div class="av-titulo-clipes"><h3>Clipes desta live</h3><span class="dica">Os mais novos primeiro. O título é sugerido segundos depois, pela fala.</span></div>
+      <div class="aviso-ia" role="note"><i data-lucide="sparkles" class="i"></i><span><b>A IA pode cometer falhas.</b> Confira o corte, a legenda e o título antes de postar. Tudo dá pra corrigir no editor.</span></div>
       <div class="clipes" id="avClipes"></div>
     </div>
   </section>
@@ -1354,6 +1364,8 @@
         <div id="recadoSugestao" style="margin-top:8px; font-weight:600"></div>
       </div>
     </div>
+
+    <div class="aviso-ia" role="note"><i data-lucide="sparkles" class="i"></i><span><b>A IA pode cometer falhas.</b> Confira o corte, a legenda e o título antes de postar. Tudo dá pra corrigir no editor.</span></div>
 
     <div class="clipes" id="listaClipes"></div>
 
@@ -1491,6 +1503,7 @@
         <span>por <b>Gabriel Workspace</b></span>
         <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">Instagram @gabriel.workspace</a>
         <a href="https://gabrielworkspace.github.io/cortador-automatico/" target="_blank" rel="noopener">Site e versão nova</a>
+        <span class="ia">A IA pode cometer falhas. Confira sempre antes de postar.</span>
       </div>
     </div>
 
@@ -1579,6 +1592,7 @@
           <label class="rot" style="margin-top:12px"><i data-lucide="captions" class="i"></i> Corrigir a legenda</label>
           <div class="ed-legenda" id="edLegenda"></div>
           <div class="dica" style="margin-top:6px">Clique numa palavra e corrija. Apague o texto pra tirar a palavra da legenda. Vale quando refizer o clipe.</div>
+          <div class="aviso-ia" role="note" style="margin-top:8px"><i data-lucide="sparkles" class="i"></i><span><b>A IA pode cometer falhas</b> e errar uma palavra ou outra. Confira antes de refazer.</span></div>
         </div>
 
         <div class="cartao">

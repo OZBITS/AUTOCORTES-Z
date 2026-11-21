@@ -146,7 +146,9 @@ function limparNome(s) {
  */
 async function espiar(url) {
   url = await normalizarUrl(url);
-  const tentativas = estrategiasPara(url).slice(0, 3);
+  const todas = estrategiasPara(url);
+  // as 3 primeiras e, se precisar, o login do navegador (YouTube pedindo login)
+  const tentativas = todas.slice(0, 3).concat(todas.filter((e, i) => i >= 3 && e.login));
   let ultimo = null;
   for (const e of tentativas) {
     try { return await espiarUma(url, e.args || []); }
@@ -191,7 +193,7 @@ function mensagemDeErro(bruto) {
   if (/private video/i.test(t)) return 'Esse video e privado.';
   if (/members-only|join this channel/i.test(t)) return 'Esse video e so para membros do canal.';
   if (/sign in to confirm|not a bot|cookies/i.test(t)) {
-    return 'O YouTube pediu login pra esse video. Baixe o arquivo na mao e use a opcao de escolher o arquivo.';
+    return 'O YouTube pediu pra confirmar que não é um robô. Abra o YouTube no Firefox, Edge ou Chrome, entre na sua conta e tente de novo: o programa usa esse login só pra baixar, aqui no seu PC. Se não der, baixe o vídeo por fora e use "Arquivo do PC".';
   }
   if (/video unavailable|not available/i.test(t)) return 'Esse video esta indisponivel.';
   if (/age.?restrict/i.test(t)) return 'Esse video tem restricao de idade.';
@@ -249,13 +251,25 @@ function atualizarYtDlp(bin) {
  * funciona hoje pode ser bloqueado amanha. Entao em vez de uma tentativa so,
  * a gente percorre uma fila de estrategias ate alguma entregar o arquivo.
  */
+// Quando o YouTube pede "confirme que nao e um robo", outro cliente ou o login
+// que a pessoa ja tem no navegador quase sempre resolve. Os cookies so sao lidos
+// aqui no PC pelo yt-dlp, pra esse download - nao vao pra lugar nenhum.
+const LOGIN_DO_NAVEGADOR = [
+  { nome: 'com o login do seu Firefox', args: ['--cookies-from-browser', 'firefox'], login: true },
+  { nome: 'com o login do seu Edge', args: ['--cookies-from-browser', 'edge'], login: true, soWindows: true },
+  { nome: 'com o login do seu Chrome', args: ['--cookies-from-browser', 'chrome'], login: true, soWindows: true },
+  { nome: 'com o login do seu Brave', args: ['--cookies-from-browser', 'brave'], login: true, soWindows: true },
+].filter((e) => process.platform === 'win32' || !e.soWindows);
+
 const ESTRATEGIAS_YOUTUBE = [
   { nome: 'normal', args: [] },
   { nome: 'cliente padrao', args: ['--extractor-args', 'youtube:player_client=default'] },
-  { nome: 'cliente da TV', args: ['--extractor-args', 'youtube:player_client=tv_embedded'] },
+  { nome: 'cliente da TV', args: ['--extractor-args', 'youtube:player_client=tv,tv_embedded'] },
+  { nome: 'cliente do Safari', args: ['--extractor-args', 'youtube:player_client=web_safari,mweb'] },
   { nome: 'cliente do celular', args: ['--extractor-args', 'youtube:player_client=android_vr'] },
+].concat(LOGIN_DO_NAVEGADOR, [
   { nome: 'qualquer formato', args: [], formatoLivre: true },
-];
+]);
 
 /**
  * Kick, Twitch e afins ficam atras de Cloudflare, que barra pela impressao
@@ -283,7 +297,7 @@ function estrategiasPara(url) {
 
 /** Nao adianta insistir quando o motivo nao muda com outra tentativa. */
 function semJeito(msg) {
-  return /privado|so para membros|restricao de idade|indisponivel|nao reconheci|Sem conexao|pediu login/i.test(String(msg));
+  return /privado|so para membros|restricao de idade|indisponivel|nao reconheci|Sem conexao/i.test(String(msg));
 }
 
 async function baixar(url, opcoes, aoProgredir) {

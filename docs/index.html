@@ -164,11 +164,16 @@
   .app-link .url { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .app-link .ir { padding: 5px 14px; border-radius: 8px; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); font-weight: 750; font-size: 12.5px; }
   .app-bt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 9px; border: 1px solid var(--linha2); font-size: 12.5px; font-weight: 650; color: var(--texto2); white-space: nowrap; }
-  .app-corpo { display: grid; grid-template-columns: 220px 1fr 300px; min-height: 560px; }
+  /* altura pela janela: o painel inteiro cabe na tela (header + margem) */
+  .app-corpo { display: grid; grid-template-columns: 200px 1fr 250px; height: clamp(420px, calc(100vh - 210px), 540px); }
+  .app-corpo > * { min-height: 0; }
+  .jogos, .clipes-area { overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
+  .clipes-area::-webkit-scrollbar, .jogos::-webkit-scrollbar { width: 8px; }
+  .clipes-area::-webkit-scrollbar-thumb, .jogos::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 99px; }
   /* coluna dos jogos */
-  .jogos { border-right: 1px solid var(--linha); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,.012); }
+  .jogos { border-right: 1px solid var(--linha); padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,.012); }
   .jogos h4 { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--texto3); font-weight: 700; padding: 4px 10px 8px; }
-  .jogo { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 11px; border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600; color: var(--texto2); transition: background .2s, color .2s, border-color .2s; }
+  .jogo { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 11px; border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600; color: var(--texto2); transition: background .2s, color .2s, border-color .2s; }
   .jogo:hover { background: rgba(255,255,255,.04); color: var(--texto); }
   .jogo .jg-ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: rgba(255,255,255,.05); border: 1px solid var(--linha); flex: none; }
   .jogo .jg-ic svg { width: 16px; height: 16px; }
@@ -178,11 +183,11 @@
   .jogos .qualquer { margin-top: auto; padding: 12px; border-radius: 12px; border: 1px dashed var(--linha2); font-size: 12.5px; color: var(--texto3); line-height: 1.5; }
   .jogos .qualquer b { color: var(--texto2); display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 13px; }
   /* grade de clipes */
-  .clipes-area { padding: 18px; min-width: 0; }
+  .clipes-area { padding: 16px; min-width: 0; }
   .clipes-topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
   .clipes-topo h3 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
   .clipes-topo .info { font-size: 12.5px; color: var(--texto3); }
-  .grade-clipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+  .grade-clipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
   .clipe { display: block; width: 100%; cursor: pointer; text-align: left; border: 0; background: none; padding: 0; animation: entrar .7s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   .clipe .mini { display: block; position: relative; aspect-ratio: 9/16; border-radius: 12px; overflow: hidden; background: #111; border: 1.5px solid var(--linha); transition: border-color .2s, transform .3s var(--suave), box-shadow .3s; }
   .clipe:hover .mini { transform: translateY(-3px); border-color: var(--linha2); }
@@ -194,43 +199,57 @@
   .clipe .play { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); color: #fff; opacity: 0; transition: opacity .2s; }
   .clipe:hover .play { opacity: 1; }
   .clipe[aria-pressed="true"] .play { opacity: 0; }
-  .clipe b { display: block; font-size: 12.5px; font-weight: 700; line-height: 1.3; margin-top: 8px; color: var(--texto); }
-  .clipe span.sub { display: block; font-size: 11.5px; color: var(--texto3); margin-top: 2px; }
+  .clipe b { display: block; font-size: 11.5px; font-weight: 700; line-height: 1.3; margin-top: 8px; color: var(--texto); }
+  .clipe span.sub { display: block; font-size: 10.5px; color: var(--texto3); margin-top: 2px; }
   /* previa (celular) */
-  .previa { border-left: 1px solid var(--linha); padding: 18px; display: flex; flex-direction: column; gap: 14px; background: rgba(255,255,255,.012); }
-  .celular { position: relative; width: 100%; max-width: 210px; margin: 0 auto; aspect-ratio: 9/18.6; border-radius: 30px; padding: 7px; background: linear-gradient(160deg, #1d1f25, #0b0c0f); border: 1px solid var(--linha2); box-shadow: 0 30px 60px -30px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.09); }
+  .previa { border-left: 1px solid var(--linha); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; background: rgba(255,255,255,.012); }
+  .celular { position: relative; width: 100%; max-width: 132px; margin: 0 auto; aspect-ratio: 9/18.6; border-radius: 30px; padding: 7px; background: linear-gradient(160deg, #1d1f25, #0b0c0f); border: 1px solid var(--linha2); box-shadow: 0 30px 60px -30px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.09); }
   .celular::after { content: ''; position: absolute; top: 13px; left: 50%; width: 54px; height: 14px; transform: translateX(-50%); border-radius: 99px; background: #000; z-index: 3; }
   .tela-cel { position: relative; height: 100%; border-radius: 24px; overflow: hidden; background: #0d1a2e; }
   .tela-cel video, .tela-cel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .tela-cel .cam { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); z-index: 2; padding: 3px 9px; border-radius: 99px; background: rgba(0,0,0,.5); font-size: 9.5px; font-weight: 600; color: rgba(255,255,255,.85); white-space: nowrap; }
-  .previa-info { display: grid; gap: 10px; }
+  .previa-info { display: grid; gap: 8px; }
+  .previa-info .titulo-sug { font-size: 13px; line-height: 1.3; }
+  /* o celular ocupa o que sobra da altura, depois das informacoes */
+  .previa .celular { flex: 1 1 0; min-height: 0; width: auto; max-width: none; height: auto; align-self: center; }
+  .previa-info { flex: none; }
+  .previa .celular { border-radius: 24px; padding: 6px; } .previa .tela-cel { border-radius: 19px; } .previa .celular::after { top: 11px; width: 40px; height: 11px; }
+  .previa .previa-bts { display: none; }
   .previa-info .lbl { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto3); font-weight: 700; display: flex; align-items: center; gap: 6px; }
   .previa-info .titulo-sug { font-size: 14px; font-weight: 700; line-height: 1.35; }
   .hashtags { display: flex; flex-wrap: wrap; gap: 5px; }
   .hashtags span { font-size: 11.5px; font-weight: 650; color: var(--marca-claro); padding: 2px 8px; border-radius: 99px; background: var(--marca-fundo); }
   .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .meta div { padding: 7px 9px; border-radius: 9px; background: rgba(255,255,255,.035); border: 1px solid var(--linha); font-size: 11.5px; color: var(--texto3); }
+  .meta div { padding: 5px 8px; border-radius: 9px; background: rgba(255,255,255,.035); border: 1px solid var(--linha); font-size: 11.5px; color: var(--texto3); }
   .meta div b { display: block; color: var(--texto); font-size: 12.5px; }
   .previa-bts { display: flex; gap: 6px; }
   .previa-bts span { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 9px; border: 1px solid var(--linha2); font-size: 12px; font-weight: 650; color: var(--texto2); }
   .previa-bts span.prim { background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); border-color: transparent; }
+  .aviso-ia { margin: 12px auto 0; width: fit-content; max-width: 100%; display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: 99px;
+    border: 1px solid rgba(245,196,81,.28); background: rgba(245,196,81,.06); color: var(--texto2); font-size: 13px; line-height: 1.4; text-align: left; }
+  .aviso-ia svg { color: var(--estrela); flex: none; }
+  .aviso-ia b { color: var(--texto); }
+  @media (max-width: 600px) { .aviso-ia { border-radius: 14px; } }
   .nota-painel { margin-top: 16px; text-align: center; font-size: 12.5px; color: var(--texto3); display: flex; align-items: center; justify-content: center; gap: 7px; }
-  @media (max-width: 1060px) { .app-corpo { grid-template-columns: 190px 1fr 250px; } }
+  @media (max-width: 1060px) { .app-corpo { grid-template-columns: 180px 1fr 230px; } }
   @media (max-width: 900px) {
-    .app-corpo { grid-template-columns: 1fr; }
+    .app-corpo { grid-template-columns: 1fr; height: auto; }
+    .clipes-area { overflow: visible; }
+    .previa { overflow: visible; }
+    .previa .previa-bts { display: flex; }
     .jogos { order: -2; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--linha); padding: 10px; scrollbar-width: none; }
     .jogos::-webkit-scrollbar { display: none; }
     .jogos h4, .jogos .qualquer { display: none; }
     .jogo { flex: none; padding: 7px 12px 7px 7px; }
     .jogo .jg-ic { width: 26px; height: 26px; }
     .previa { order: -1; border-left: 0; border-bottom: 1px solid var(--linha); flex-direction: row; align-items: flex-start; }
-    .previa .celular { max-width: 150px; margin: 0; flex: none; }
+    .previa .celular { max-width: 150px; width: 100%; margin: 0; flex: none; align-self: flex-start; }
     .previa-info { flex: 1; min-width: 0; }
     .app-bt.opc, .app-logo span { display: none; }
   }
   @media (max-width: 520px) {
     .previa { flex-direction: column; align-items: center; }
-    .previa .celular { max-width: 190px; }
+    .previa .celular { max-width: 190px; align-self: center; }
     .previa-info { width: 100%; }
     .grade-clipes { grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .clipe b { font-size: 11.5px; } .clipe span.sub { display: none; }
@@ -246,6 +265,29 @@
   .numeros span { font-size: 13px; color: var(--texto2); }
   @media (max-width: 860px) { .numeros .largura { grid-template-columns: 1fr 1fr; margin: 0 22px; } }
   @media (max-width: 480px) { .numeros div { padding: 16px; } .numeros b { font-size: 20px; } }
+
+  /* ---------------------------------------------------------- computacao local */
+  #local { padding-bottom: 40px; }
+  .local { position: relative; max-width: 1080px; margin: 0 auto; padding: 46px 40px 40px; border-radius: 30px; border: 1px solid var(--linha2); text-align: center; overflow: hidden;
+    background: radial-gradient(ellipse 70% 90% at 50% 0%, rgba(61,139,255,.18), transparent 65%), linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); }
+  .local .chip-local { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 99px; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.35); color: var(--marca-claro); font-size: 13px; font-weight: 700; margin-bottom: 18px; }
+  .local h2 { max-width: 15em; margin: 0 auto 14px; }
+  .local > p { color: var(--texto2); font-size: 17px; max-width: 40em; margin: 0 auto 30px; }
+  .sem { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: left; }
+  @media (max-width: 860px) { .sem { grid-template-columns: repeat(2, 1fr); } .local { padding: 34px 18px 22px; } }
+  @media (max-width: 480px) { .sem { grid-template-columns: 1fr; } }
+  .sem div { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 14px; border-radius: 16px; border: 1px solid var(--linha); background: rgba(5,6,7,.5); }
+  .sem .s-ic { position: relative; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,77,94,.08); border: 1px solid rgba(255,77,94,.25); color: #ff8a94; }
+  .sem .s-ic svg { width: 19px; height: 19px; }
+  .sem b { display: block; font-size: 15.5px; font-weight: 700; text-decoration: line-through; text-decoration-color: rgba(255,77,94,.75); text-decoration-thickness: 2px; }
+  .sem span.d { display: block; font-size: 13px; color: var(--texto3); line-height: 1.4; margin-top: 2px; }
+  .tudo-local { margin-top: 22px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; text-align: left; padding: 18px 22px; border-radius: 18px; border: 1px solid rgba(61,139,255,.3); background: var(--marca-fundo2); }
+  .tudo-local .t-ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); }
+  .tudo-local .t-ic svg { width: 24px; height: 24px; }
+  .tudo-local b { display: block; font-size: 17px; font-weight: 700; }
+  .tudo-local span { font-size: 14px; color: var(--texto2); }
+  .tudo-local .preco { font-size: 30px; font-weight: 750; letter-spacing: -.03em; color: var(--verde); white-space: nowrap; }
+  @media (max-width: 600px) { .tudo-local { grid-template-columns: auto 1fr; } .tudo-local .preco { grid-column: 1 / -1; font-size: 24px; } }
 
   /* ---------------------------------------------------------- como funciona (telas reais) */
   .historia { display: grid; grid-template-columns: .9fr 1.1fr; gap: 56px; align-items: start; }
@@ -347,6 +389,15 @@
   .peca span { font-size: 12.5px; color: var(--texto3); }
   .licenca { margin-top: auto; padding-top: 6px; font-size: 12.5px; color: var(--texto3); display: flex; align-items: center; gap: 7px; }
 
+  .stack.oficial .term { color: var(--marca-claro); font-weight: 700; font-size: 13px; letter-spacing: .04em; }
+  .stack.oficial .term svg { width: 16px; height: 16px; color: var(--marca2); }
+  .stack.oficial .peca { transition: border-color .2s, background .2s; }
+  .stack.oficial .peca:hover { border-color: rgba(127,178,255,.45); background: rgba(61,139,255,.06); }
+  .peca .p-ic .ic-m { width: 18px; height: 18px; }
+  .alerta-copia { margin-top: auto; display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 14px; border-radius: 14px; background: rgba(245,196,81,.07); border: 1px solid rgba(245,196,81,.28); font-size: 13.5px; color: var(--texto2); line-height: 1.5; }
+  .alerta-copia svg { width: 18px; height: 18px; color: var(--estrela); margin-top: 2px; }
+  .alerta-copia b { color: var(--texto); }
+
   /* ---------------------------------------------------------- requisitos */
   .reqs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 980px; margin: 0 auto; }
   @media (max-width: 760px) { .reqs { grid-template-columns: 1fr; } }
@@ -365,6 +416,21 @@
   .req-comum { max-width: 980px; margin: 16px auto 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .req-comum span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 99px; border: 1px solid var(--linha); background: var(--vidro); font-size: 13.5px; color: var(--texto2); }
   .req-comum svg { color: var(--marca2); }
+
+  /* ---------------------------------------------------------- quem ja usa (comentarios do YouTube) */
+  .depos { columns: 3 280px; column-gap: 14px; max-width: 1100px; margin: 0 auto; }
+  .depo { break-inside: avoid; margin: 0 0 14px; padding: 22px; border-radius: 20px; border: 1px solid var(--linha); background: var(--vidro); position: relative; }
+  .depo.destaque { background: radial-gradient(ellipse 90% 70% at 0% 0%, rgba(61,139,255,.16), transparent 70%), var(--vidro); border-color: rgba(61,139,255,.3); }
+  .depo .aspas { width: 26px; height: 26px; color: var(--marca2); opacity: .7; margin-bottom: 10px; }
+  .depo blockquote { font-size: 15.5px; line-height: 1.55; color: var(--texto); }
+  .depo.destaque blockquote { font-size: 17px; }
+  .depo figcaption { display: flex; align-items: center; gap: 11px; margin-top: 16px; }
+  .avatar-letra { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; font-weight: 800; font-size: 15px; background: linear-gradient(135deg, var(--marca2), var(--marca)); color: var(--sobre-marca); }
+  .depo figcaption b { display: block; font-size: 14px; }
+  .depo figcaption small { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--texto3); }
+  .depo .yt { color: var(--youtube); width: 14px; height: 14px; }
+  .depo small svg.lucide { width: 12px; height: 12px; }
+  .ver-video { text-align: center; margin-top: 10px; }
 
   /* ---------------------------------------------------------- apoio (3 jeitos) */
   .formas { display: grid; gap: 12px; text-align: left; }
@@ -442,6 +508,19 @@
   .botoes-opcao .btn { padding: 9px 15px; font-size: 14px; }
   @media (max-width: 480px) { .botoes-opcao .btn { flex: 1 1 100%; } .opcao { padding: 16px; } .modal { padding: 26px 18px 18px; } }
 
+  /* ---------------------------------------------------------- contorno girando nos destaques */
+  @property --giro { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .contorno { position: relative; isolation: isolate; }
+  .contorno::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none; z-index: 5;
+    background: conic-gradient(from var(--giro), transparent 0deg, transparent 200deg, rgba(61,139,255,.85) 270deg, #e6f0ff 310deg, rgba(127,178,255,.9) 330deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    animation: girar 4.5s linear infinite;
+  }
+  .contorno.brilha { box-shadow: 0 0 0 1px rgba(61,139,255,.08), 0 24px 70px -30px rgba(61,139,255,.55); }
+  @keyframes girar { to { --giro: 360deg; } }
+
   /* ---------------------------------------------------------- aparecer ao rolar: desfocado -> nitido */
   .surge { opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985); transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave); transition-delay: calc(var(--d, 0) * 1ms); }
   .surge.visto { opacity: 1; filter: blur(0); transform: none; }
@@ -452,6 +531,7 @@
     html { scroll-behavior: auto; }
     .ponto { animation: none; }
     .surge, .entra, h1 .palavra, .clipe, .troca { opacity: 1; filter: none; transform: none; transition: none; animation: none; }
+    .contorno::before { animation: none; --giro: 300deg; }
     .etapa, .janela .vista img { filter: none; transition: none; }
   }
 </style>
@@ -521,7 +601,7 @@
       <div class="vitrine entra" style="--d:500">
         <div class="arco" aria-hidden="true"></div>
         <div class="brilho" aria-hidden="true"></div>
-        <div class="app" role="region" aria-label="Painel interativo do Cortador Automático">
+        <div class="app contorno" role="region" aria-label="Painel interativo do Cortador Automático">
           <div class="app-barra">
             <div class="bolas" aria-hidden="true"><i></i><i></i><i></i></div>
             <div class="app-logo"><img src="icone.png" alt=""><span>Cortador Automático</span></div>
@@ -564,6 +644,7 @@
           </div>
         </div>
         <p class="nota-painel"><i data-lucide="mouse-pointer-click"></i> Clique nos jogos e nos cortes. São cortes reais feitos pelo programa, aqui sem som e sem o rosto dos streamers.</p>
+        <p class="aviso-ia" role="note"><i data-lucide="sparkles"></i><span><b>A IA pode cometer falhas.</b> Confira o corte, a legenda e o título antes de postar. Tudo dá pra corrigir no editor.</span></p>
       </div>
     </div>
   </section>
@@ -576,6 +657,30 @@
       <div><i data-lucide="shield-check"></i><span><b>R$ 0</b>sem conta, sem assinatura, sem API</span></div>
     </div>
   </div>
+
+  <!-- ======================================================== computacao local -->
+  <section id="local">
+    <div class="largura">
+      <div class="local contorno brilha surge">
+        <span class="chip-local"><i data-lucide="house-plug"></i> Computação local</span>
+        <h2>Sem nuvem. Sem ChatGPT. Sem API. Tudo no seu PC.</h2>
+        <p>A inteligência que ouve a live, escolhe os melhores momentos e escreve a legenda roda no seu próprio processador. Nada vai pra servidor de ninguém, nada é cobrado por uso e nada para de funcionar se um serviço de fora sair do ar.</p>
+        <div class="sem" data-escalonar>
+          <div><span class="s-ic"><i data-lucide="cloud-off"></i></span><span><b>Nuvem</b><span class="d">Seus vídeos não sobem pra servidor nenhum.</span></span></div>
+          <div><span class="s-ic"><i data-lucide="bot-off"></i></span><span><b>ChatGPT</b><span class="d">Nada de mandar a sua live pra IA de fora.</span></span></div>
+          <div><span class="s-ic"><i data-lucide="code-xml"></i></span><span><b>Codex</b><span class="d">Nenhuma ferramenta paga rodando por trás.</span></span></div>
+          <div><span class="s-ic"><i data-lucide="key-round"></i></span><span><b>Chave de API</b><span class="d">Não precisa criar conta em lugar nenhum.</span></span></div>
+          <div><span class="s-ic"><i data-lucide="credit-card"></i></span><span><b>Assinatura</b><span class="d">Sem plano, sem cartão, sem limite de cortes.</span></span></div>
+          <div><span class="s-ic"><i data-lucide="user-x"></i></span><span><b>Cadastro</b><span class="d">Instalou, abriu, já está cortando.</span></span></div>
+        </div>
+        <div class="tudo-local">
+          <span class="t-ic"><i data-lucide="cpu"></i></span>
+          <span><b>100% no seu computador</b><span>Transcrição, escolha dos momentos e corte acontecem aí, com o seu processador. Internet só pra baixar a live.</span></span>
+          <span class="preco">R$ 0</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section id="como">
     <div class="largura">
@@ -605,7 +710,7 @@
               <li><span>Ou deixe no <b>automático</b>: quando o chat explode ou o streamer grita, ele corta sozinho.</span></li>
               <li><span>O anúncio da Twitch é jogado fora. Nenhum clipe sai com a tela de comercial.</span></li>
             </ul>
-            <div class="tela-cel-mini"><img src="telas/aovivo.jpg" alt="Painel ao vivo com o botão CLIPAR AGORA e os clipes prontos" loading="lazy"></div>
+            <div class="tela-cel-mini"><img src="telas/aovivo.jpg" alt="Painel ao vivo gravando uma live de Valorant, com o botão CLIPAR AGORA e o termômetro da live" loading="lazy"></div>
           </div>
           <div class="etapa" data-tela="projeto">
             <span class="num"><b>3</b> Vídeo gravado</span>
@@ -616,7 +721,7 @@
               <li><span>Vem com <b>título e hashtags</b> sugeridos a partir da própria fala.</span></li>
               <li><span>Quer mais? Dá pra tirar mais cortes do mesmo vídeo.</span></li>
             </ul>
-            <div class="tela-cel-mini"><img src="telas/projeto.jpg" alt="Lista de cortes prontos com botões de baixar e copiar a legenda" loading="lazy"></div>
+            <div class="tela-cel-mini"><img src="telas/projeto.jpg" alt="Projeto de vídeo gravado com os cortes prontos, prontos pra baixar, copiar a legenda e editar" loading="lazy"></div>
           </div>
           <div class="etapa" data-tela="editor">
             <span class="num"><b>4</b> Ajuste e poste</span>
@@ -635,8 +740,8 @@
             <div class="barra"><i></i><i></i><i></i><span>Cortador Automático</span></div>
             <div class="vista">
               <img class="on" data-tela="inicio" src="telas/inicio.jpg" alt="Tela inicial do Cortador Automático com o campo do link">
-              <img data-tela="aovivo" src="telas/aovivo.jpg" alt="Painel ao vivo com o botão CLIPAR AGORA e os clipes prontos" loading="lazy">
-              <img data-tela="projeto" src="telas/projeto.jpg" alt="Lista de cortes prontos com botões de baixar e copiar a legenda" loading="lazy">
+              <img data-tela="aovivo" src="telas/aovivo.jpg" alt="Painel ao vivo gravando uma live de Valorant, com o botão CLIPAR AGORA e o termômetro da live" loading="lazy">
+              <img data-tela="projeto" src="telas/projeto.jpg" alt="Projeto de vídeo gravado com os cortes prontos, prontos pra baixar, copiar a legenda e editar" loading="lazy">
               <img data-tela="editor" src="telas/editor.jpg" alt="Editor do corte com a linha do tempo e a legenda" loading="lazy">
             </div>
           </div>
@@ -652,7 +757,7 @@
       <div class="titulo surge">
         <span class="rot"><i data-lucide="smartphone"></i> Formatos</span>
         <h2>Um vídeo deitado, vários jeitos de virar corte.</h2>
-        <p>Clique num formato: é o mesmo trecho de Valorant, saindo de cada jeito que o programa faz.</p>
+        <p>Clique num formato: é o mesmo trecho de uma live de GTA, saindo de cada jeito que o programa faz.</p>
       </div>
       <div class="formatos">
         <div class="lista-formatos" data-escalonar>
@@ -680,13 +785,13 @@
         <p>Rápido pra postar primeiro, completo pra não precisar de mais nada.</p>
       </div>
       <div class="grade" data-escalonar>
-        <div class="cartao destaque">
+        <div class="cartao destaque contorno">
           <span class="vivo"><span class="ponto"></span> AO VIVO</span>
           <h3>Clipa a live enquanto ela acontece</h3>
           <p>Conecte no canal e o programa fica gravando junto com você. Viu o lance? Aperte <b>CLIPAR</b> (ou a tecla <kbd>C</kbd>) e os últimos segundos viram um clipe em pé em uns 15 segundos. Ou deixe no automático: quando o chat explode ou o streamer grita, ele corta sozinho.</p>
         </div>
         <div class="cartao"><div class="ic"><i data-lucide="film"></i></div><h3>Acha os melhores momentos</h3><p>Live que já acabou ou vídeo do YouTube: ele ouve tudo, escolhe os trechos com mais chance de viralizar e dá uma nota pra cada um.</p></div>
-        <div class="cartao"><div class="ic"><i data-lucide="captions"></i></div><h3>Legenda palavra por palavra</h3><p>A fala vira legenda com a palavra dita em destaque, em português. Dá pra corrigir qualquer palavra no editor antes de refazer.</p></div>
+        <div class="cartao"><div class="ic"><i data-lucide="captions"></i></div><h3>Legenda palavra por palavra</h3><p>A fala vira legenda com a palavra dita em destaque, em português. A IA pode errar uma palavra ou outra: dá pra corrigir qualquer uma no editor antes de refazer.</p></div>
         <div class="cartao"><div class="ic"><i data-lucide="type"></i></div><h3>Texto fixo e gancho</h3><p>Texto em cima, no meio ou embaixo ("AO VIVO AGORA", "@seucanal") e gancho nos primeiros segundos pra segurar quem está rolando.</p></div>
         <div class="cartao"><div class="ic"><i data-lucide="pencil"></i></div><h3>Edita depois de pronto</h3><p>Volte e avance o começo e o fim, troque o texto e a legenda. Também nos clipes da live, sem perder nada.</p></div>
         <div class="cartao"><div class="ic"><i data-lucide="skip-forward"></i></div><h3>Pula o anúncio da Twitch</h3><p>O comercial que a Twitch coloca na transmissão é reconhecido e jogado fora. Nenhum clipe sai com tela de anúncio.</p></div>
@@ -701,19 +806,19 @@
   <section id="codigo">
     <div class="largura">
       <div class="titulo surge">
-        <span class="rot"><i data-lucide="code"></i> Código aberto</span>
-        <h2>Aberto, grátis e seu.</h2>
-        <p>Todo o código está no GitHub. Dá pra ver como funciona, conferir que não tem nada escondido e até ajudar a melhorar.</p>
+        <span class="rot"><i data-lucide="eye"></i> Código aberto</span>
+        <h2>Transparente pra você confiar.</h2>
+        <p>O código fica público no GitHub pra qualquer um conferir que o programa é seguro e não esconde nada. Mas o Cortador Automático oficial é um só: o do Gabriel Workspace.</p>
       </div>
       <div class="aberto">
-        <div class="aberto-texto surge">
+        <div class="aberto-texto surge contorno brilha">
           <div class="gh"><svg class="ic-m"><use href="#m-github"/></svg></div>
-          <h3>gabrielworkspace / cortador-automatico</h3>
-          <p>Licença MIT: pode usar, estudar e modificar à vontade.</p>
+          <h3>Dá pra conferir tudo</h3>
+          <p>Antivírus reclamou? Ficou com dúvida? O código está lá, aberto, do jeito que vai no instalador.</p>
           <div class="stats">
             <div><b data-estrelas-num>—</b><span>estrelas</span></div>
             <div><b data-versao-num>—</b><span>versão</span></div>
-            <div><b>MIT</b><span>licença</span></div>
+            <div><b>R$ 0</b><span>sempre</span></div>
           </div>
           <ul class="garantias">
             <li><i data-lucide="circle-check"></i><span><b>Sem conta e sem chave de API.</b> Nada de serviço pago por trás.</span></li>
@@ -721,17 +826,16 @@
             <li><i data-lucide="circle-check"></i><span><b>Internet só pra baixar</b> a live ou o vídeo que você colou.</span></li>
           </ul>
           <div class="acoes" style="justify-content:flex-start">
-            <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> Ver o código</a>
+            <a class="btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> Conferir o código</a>
             <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela</a>
           </div>
         </div>
-        <div class="stack surge" data-escalonar>
-          <div class="term"><i></i><i></i><i></i> o que vem dentro do instalador</div>
-          <div class="peca"><span class="p-ic"><i data-lucide="audio-lines"></i></span><span><b>faster-whisper</b><span>ouve a fala e gera a legenda, no seu processador</span></span></div>
-          <div class="peca"><span class="p-ic"><i data-lucide="clapperboard"></i></span><span><b>ffmpeg</b><span>corta, enquadra em 9:16 e queima a legenda</span></span></div>
-          <div class="peca"><span class="p-ic"><i data-lucide="download"></i></span><span><b>yt-dlp</b><span>baixa a live e o vídeo da Twitch, Kick e YouTube</span></span></div>
-          <div class="peca"><span class="p-ic"><i data-lucide="code-2"></i></span><span><b>Node.js + Python</b><span>o programa em si, que roda numa janela no seu PC</span></span></div>
-          <p class="licenca"><i data-lucide="scale"></i> Cada peça com a sua licença de código aberto.</p>
+        <div class="stack oficial surge" data-escalonar>
+          <div class="term"><i data-lucide="badge-check"></i> Só o oficial</div>
+          <a class="peca" href="https://gabrielworkspace.github.io/cortador-automatico/"><span class="p-ic"><i data-lucide="globe"></i></span><span><b>Site oficial</b><span>gabrielworkspace.github.io/cortador-automatico</span></span></a>
+          <a class="peca" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><span class="p-ic"><svg class="ic-m"><use href="#m-github"/></svg></span><span><b>GitHub oficial</b><span>github.com/gabrielworkspace</span></span></a>
+          <a class="peca" href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener"><span class="p-ic"><svg class="ic-m"><use href="#m-instagram"/></svg></span><span><b>Instagram oficial</b><span>@gabriel.workspace</span></span></a>
+          <div class="alerta-copia"><i data-lucide="triangle-alert"></i><span><b>Viu o Cortador Automático com outro nome, em outro site ou sendo vendido?</b> Não é nosso. O original é e vai continuar grátis, e só sai daqui.</span></div>
         </div>
       </div>
     </div>
@@ -755,7 +859,7 @@
             <li><i data-lucide="laptop"></i><span>Notebook ou PC que <b>esquenta ou desliga</b> gerando cortes</span></li>
           </ul>
         </div>
-        <div class="req rec">
+        <div class="req rec contorno brilha">
           <div class="req-topo"><span class="r-ic"><i data-lucide="zap"></i></span><div><b>Processador total</b><small>recomendado</small></div></div>
           <p>Usa quase todo o processador. Os cortes ficam prontos mais rápido; o PC trabalha no máximo enquanto gera.</p>
           <ul>
@@ -771,6 +875,50 @@
         <span><i data-lucide="wifi"></i> Internet só pra baixar as lives</span>
         <span><i data-lucide="circle-check"></i> Não precisa de placa de vídeo</span>
       </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== quem ja usa -->
+  <section id="comentarios">
+    <div class="largura">
+      <div class="titulo surge">
+        <span class="rot"><i data-lucide="messages-square"></i> Quem já usa</span>
+        <h2>O que a galera está falando.</h2>
+        <p>Comentários de verdade de quem baixou, deixados no vídeo do Cortador Automático no YouTube.</p>
+      </div>
+      <div class="depos" data-escalonar>
+          <figure class="depo destaque contorno brilha">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>Que Deus abençoe a sua vida meu irmão! tudo que eu achei pra cortes prometiam que era grátis, mas no final tinha que pagar algo. Com esse programa já fiz vários cortes e postei, muito obrigado</blockquote>
+            <figcaption><span class="avatar-letra">K</span><span><b>@kauann-pereira</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>… eu tava procurando isso há muito tempo! Você é uma lenda, irmão! Até me inscrevi, fera demais!!!</blockquote>
+            <figcaption><span class="avatar-letra">V</span><span><b>@ViceGamesOficial</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>top de mais eu já teste muito legal…</blockquote>
+            <figcaption><span class="avatar-letra">D</span><span><b>@DallasFitBurst</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 7</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>po cara, faz tempo eu queria achar algo parecido, tentei, baixei um monte de paranaue no claude e nao consegui, isso que tu postou ai … atendeu minhas necessidades, valeu mesmo</blockquote>
+            <figcaption><span class="avatar-letra">I</span><span><b>@its_biles</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>deu bom aqui aliado, vídeo brabo</blockquote>
+            <figcaption><span class="avatar-letra">S</span><span><b>@straikdsgrm</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 2</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>muito boa sua ferramenta, obrigado!</blockquote>
+            <figcaption><span class="avatar-letra">T</span><span><b>@TheCenturysGame</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+      </div>
+      <div class="ver-video surge"><a class="btn" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver o vídeo e todos os comentários <i data-lucide="external-link"></i></a></div>
     </div>
   </section>
 
@@ -791,12 +939,12 @@
           <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
-      <div class="forma f-pix apoio-pix" hidden>
+      <div class="forma f-pix apoio-pix contorno" hidden>
         <span class="f-ic"><i data-lucide="heart"></i></span>
         <div>
           <b>Mande qualquer valor por Pix</b>
           <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix"><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
+          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
           <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
         </div>
       </div>
@@ -825,8 +973,10 @@
         <details><summary><i data-lucide="shield-alert"></i> O Windows mostrou "O Windows protegeu o computador". É vírus?</summary><p>Não. Esse aviso aparece pra programas novos que ainda não têm certificado de assinatura digital (o nosso está em análise na SignPath Foundation). Clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>. O código é aberto no GitHub, dá pra conferir tudo.</p></details>
         <details><summary><i data-lucide="flame"></i> Meu PC esquenta ou desliga enquanto gera os cortes. E agora?</summary><p>É o processador trabalhando no máximo. Em <b>Ajustes › Uso do processador</b>, escolha o <b>Modo leve</b>: ele usa metade do processador, com prioridade baixa, e o PC esquenta bem menos. Também ajuda limpar a poeira do cooler.</p></details>
         <details><summary><i data-lucide="folder-open"></i> Onde ficam os meus cortes?</summary><p>Por padrão, na pasta <b>Vídeos › Cortador Automatico</b>. Dá pra trocar o disco ou a pasta em <b>Ajustes › Onde salvar</b>. Eles também aparecem no botão <b>Projetos</b>, pra assistir, baixar e editar de novo.</p></details>
+        <details><summary><i data-lucide="sparkles"></i> A IA acerta sempre?</summary><p>Não. <b>A IA pode cometer falhas</b>: errar uma palavra da legenda, escolher um trecho mais fraco ou sugerir um título estranho, principalmente quando o som do jogo está alto por cima da voz. Por isso confira antes de postar: no editor dá pra mudar o começo e o fim, o texto da tela e corrigir a legenda palavra por palavra.</p></details>
         <details><summary><i data-lucide="pencil"></i> Dá pra editar um clipe depois de pronto?</summary><p>Dá, inclusive os clipes da live. No editor você volta e avança o começo e o fim, muda o texto da tela e corrige a legenda palavra por palavra.</p></details>
         <details><summary><i data-lucide="radio"></i> Como funciona o corte automático na live?</summary><p>Ele olha o chat (na Twitch e na Kick) e o volume do streamer. Quando os dois explodem, corta uns segundos antes e depois do lance, pra pegar a reação. Você escolhe se quer só os lances grandes ou tudo que mexer.</p></details>
+        <details><summary><i data-lucide="badge-check"></i> Achei o Cortador em outro site ou com outro nome. É o mesmo?</summary><p>Não. O oficial é só o do <b>Gabriel Workspace</b>: este site, o GitHub <b>gabrielworkspace</b> e o Instagram <b>@gabriel.workspace</b>. Ele é grátis; se alguém estiver vendendo ou pedindo cadastro, não é nosso. Baixe sempre por aqui.</p></details>
         <details><summary><i data-lucide="refresh-cw"></i> Como atualizo pra uma versão nova?</summary><p>Baixe o instalador de novo nesta página e instale por cima. Seus cortes e ajustes continuam onde estavam.</p></details>
       </div>
     </div>
@@ -834,7 +984,7 @@
 
   <section style="padding-top:20px">
     <div class="largura">
-      <div class="final surge">
+      <div class="final surge contorno brilha">
         <img src="icone.png" alt="">
         <h2>Comece a clipar hoje.</h2>
         <p>Baixe, instale e cole o link da primeira live. O primeiro corte sai em minutos.</p>
@@ -850,7 +1000,8 @@
 
 <footer>
   <div class="largura">
-    <span>© 2026 <b style="color:var(--texto2)">Gabriel Workspace</b> · Cortador Automático · código aberto (MIT) no <a href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener">GitHub</a> · Instagram <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">@gabriel.workspace</a></span>
+    <span>© 2026 <b style="color:var(--texto2)">Gabriel Workspace</b> · Cortador Automático · código aberto no <a href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener">GitHub</a> · Instagram <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">@gabriel.workspace</a></span>
+    <span>A IA pode cometer falhas: confira os cortes, a legenda e os títulos antes de postar.</span>
     <span>Usa ffmpeg, yt-dlp, Python e faster-whisper, cada um com a sua licença. Ícones Lucide (ISC). Fonte Manrope (<a href="OFL-Manrope.txt">OFL</a>). Twitch, Kick, YouTube e os jogos citados são marcas dos seus donos.</span>
     <span>Assinatura de código: pedido em análise na <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. Free code signing provided by <a href="https://signpath.io/" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a>. · <a href="https://github.com/gabrielworkspace/cortador-automatico#privacidade" target="_blank" rel="noopener">Privacidade</a></span>
   </div>
@@ -862,7 +1013,7 @@
     <button class="fechar-x" type="button" data-fechar aria-label="Fechar"><i data-lucide="x"></i></button>
     <h3 id="escolherTitulo">Como você quer baixar?</h3>
     <p>As duas opções são grátis e instalam o mesmo programa.</p>
-    <div class="opcao recomendada">
+    <div class="opcao recomendada contorno">
       <div class="opcao-topo">
         <span class="opcao-ic"><i data-lucide="download"></i></span>
         <div><b>Instalador para Windows (.exe)</b><span>Recomendado · tudo dentro, é só clicar em Avançar · ~770 MB</span></div>
@@ -906,12 +1057,12 @@
           <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
-      <div class="forma f-pix apoio-pix" hidden>
+      <div class="forma f-pix apoio-pix contorno" hidden>
         <span class="f-ic"><i data-lucide="heart"></i></span>
         <div>
           <b>Mande qualquer valor por Pix</b>
           <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix"><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
+          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
           <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
         </div>
       </div>
@@ -942,12 +1093,12 @@
           <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
-      <div class="forma f-pix apoio-pix" hidden>
+      <div class="forma f-pix apoio-pix contorno" hidden>
         <span class="f-ic"><i data-lucide="heart"></i></span>
         <div>
           <b>Mande qualquer valor por Pix</b>
           <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix"><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
+          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
           <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
         </div>
       </div>
@@ -991,7 +1142,7 @@
     { jogo: 'lol', video: 'jogos/lol.mp4', capa: 'jogos/lol.jpg', titulo: 'A TEAMFIGHT QUE DECIDIU O JOGO', tags: ['lol', 'leagueoflegends', 'mundial'], formato: 'Tela cheia', dur: '0:09', origem: 'Vídeo gravado', plat: 'twitch', url: 'twitch.tv/canal-de-lol/clip/…' },
     { jogo: 'gta', video: 'cortes/estrada.mp4', capa: 'cortes/estrada.jpg', titulo: 'PERSEGUIÇÃO NA ESTRADA SAIU DO CONTROLE', tags: ['gta6', 'perseguicao', 'gta'], formato: 'Tela cheia', dur: '0:30', origem: 'Ao vivo · pico do chat', plat: 'kick', url: 'kick.com/canal-de-gta' },
     { jogo: 'cs2', video: 'jogos/cs2.mp4', capa: 'jogos/cs2.jpg', titulo: 'DIFÍCIL PASSAR POR ESSE BURACO', tags: ['cs2', 'counterstrike', 'fps'], formato: 'Tela cheia', dur: '0:07', origem: 'Vídeo gravado', plat: 'twitch', url: 'twitch.tv/canal-de-cs/clip/…' },
-    { jogo: 'valorant', video: 'jogos/formato-split.mp4', capa: 'jogos/formato-split.jpg', titulo: 'ACE NO ÚLTIMO ROUND', tags: ['valorant', 'ace', 'cortes'], formato: 'Rosto + jogo', dur: '0:09', origem: 'Vídeo gravado', plat: 'twitch', url: 'twitch.tv/canal-de-valorant/clip/…', cam: true },
+    { jogo: 'valorant', video: 'jogos/valorant-ace.mp4', capa: 'jogos/valorant-ace.jpg', titulo: 'ACE NO ÚLTIMO ROUND', tags: ['valorant', 'ace', 'cortes'], formato: 'Rosto + jogo', dur: '0:09', origem: 'Vídeo gravado', plat: 'twitch', url: 'twitch.tv/canal-de-valorant/clip/…', cam: true },
     { jogo: 'gta', video: 'cortes/piscina.mp4', capa: 'cortes/piscina.jpg', titulo: 'ELE NÃO ESPERAVA ESSA', tags: ['gta6', 'engracado', 'gta'], formato: 'Rosto + jogo', dur: '0:30', origem: 'Ao vivo · volume subiu', plat: 'kick', url: 'kick.com/canal-de-gta', cam: true },
     { jogo: 'gta', video: 'cortes/vicecity.mp4', capa: 'cortes/vicecity.jpg', titulo: 'ANDANDO POR VICE CITY PELA PRIMEIRA VEZ', tags: ['gta6', 'vicecity', 'gta'], formato: 'Tela cheia', dur: '0:30', origem: 'Ao vivo · botão CLIPAR', plat: 'kick', url: 'kick.com/canal-de-gta' },
     { jogo: 'gta', video: 'cortes/campo.mp4', capa: 'cortes/campo.jpg', titulo: 'EXPLORANDO O MAPA NOVO', tags: ['gta6', 'mapa', 'gta'], formato: 'Rosto + jogo', dur: '0:30', origem: 'Ao vivo · automático', plat: 'kick', url: 'kick.com/canal-de-gta', cam: true },
@@ -1083,7 +1234,7 @@
   var fmtVisivel = false;
   function mostrarFormato(id) {
     var f = FORMATOS[id]; if (!f) return;
-    document.querySelectorAll('.fmt').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.fmt === id)); });
+    document.querySelectorAll('.fmt').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.fmt === id)); b.classList.toggle('contorno', b.dataset.fmt === id); });
     $('palcoFmt').classList.toggle('original', id === 'original');
     var v = id === 'original' ? $('fmtDeitado') : $('fmtVideo');
     var outro = id === 'original' ? $('fmtVideo') : $('fmtDeitado');
@@ -1146,8 +1297,9 @@
       // so diz "copiada" se copiou de verdade; senao seleciona a chave pra copiar na mao
       var falhou = function () {
         if (copiarAntigo(DOACAO.pix)) return copiou();
-        if (chave) selecionarChave(chave);
-        mostrar('Selecionei a chave: segure e copie (ou Ctrl+C)');
+        // nao deu pra copiar sozinho: mostra a chave ja selecionada pra copiar na mao
+        if (chave) { chave.parentNode.hidden = false; selecionarChave(chave); }
+        mostrar('Copie a chave acima (segure ou Ctrl+C)');
       };
       if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(DOACAO.pix).then(copiou, falhou);
       else falhou();

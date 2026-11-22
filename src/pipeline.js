@@ -698,6 +698,7 @@ async function renderizarClipe(ctx, c) {
       margemGancho: formatoDoClipe === 'split' ? 660 : 180,
       posicaoGancho: opcoes.posicaoGancho === 'meio' ? 'meio' : 'topo',
       textoFixo: textoFixo,
+      alturaDivisao: legenda.alturaDaDivisao(formatoDoClipe, opcoes.recorte),
     });
   }
 
